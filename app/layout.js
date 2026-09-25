@@ -1,14 +1,13 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Viscose",
-  description:
-    "A portfolio carousel rendered as a single WebGL shader. Cards ride a ring and stretch into threads as they pull apart.",
+  title: "JIN Studio · 作品",
+  description: "JIN Studio 的角色、影像与创作。",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="zh-Hans">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

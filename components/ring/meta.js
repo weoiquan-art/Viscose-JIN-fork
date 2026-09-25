@@ -124,7 +124,7 @@ function createGroup(side, groups, params) {
     draw();
     gsap.to(m, {
       t: 1,
-      duration: params.nameMorphTime,
+      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : params.nameMorphTime,
       ease: params.nameEase,
       onUpdate: draw,
     });
@@ -161,7 +161,7 @@ export function createMeta(refs, params) {
     const bigVw = params.nameSize * textK * (tight ? params.tightName : 1);
     const big = `${bigVw}vw`;
     const small = `${params.idxSize * textK}vw`;
-    const bigFace = `"${params.nameFont}", ui-sans-serif, system-ui, sans-serif`;
+    const bigFace = `"${params.nameFont}", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif`;
     const smallFace = `"${params.idxFont}", ui-sans-serif, system-ui, sans-serif`;
     const bigWeight = `${params.nameWeight}`;
     const smallWeight = `${params.idxWeight}`;
@@ -254,7 +254,7 @@ export function createMeta(refs, params) {
     right.set([p.type, p.year]);
     // The groups are hidden from the accessibility tree, so the card is
     // announced once, in full, from the live region instead of four times.
-    if (live) live.textContent = `${p.name}. ${p.type}, ${p.year}.`;
+    if (live) live.textContent = `${p.name}. ${p.type}${p.year ? `, ${p.year}` : ""}.`;
   };
 
   const dispose = () => {

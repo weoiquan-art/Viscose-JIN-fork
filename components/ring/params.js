@@ -36,7 +36,7 @@ export function defaultParams() {
     refWidth: 1512,
     refHeight: 870, // viewport, i.e. screen less menu bar and browser chrome
     fitHeight: 0, // 0 = width alone drives scale, 1 = whichever axis is tighter
-    minScale: 0.5, // a phone is not a small desktop; bracket the extremes
+    minScale: 0.58, // keep the card legible on 360px phones
     maxScale: 1.75,
 
     narrowAt: 1024, // inclusive
@@ -47,18 +47,18 @@ export function defaultParams() {
     narrowEndScale: 4.22,
 
     tightAt: 640, // inclusive
-    tightRadius: 0.82, // multiplies narrowRadius
+    tightRadius: 1.3, // retain breathing room at phone widths
     tightPosX: -3.5,
     tightSplit: 0.8, // the heading, competing with the ring for centre screen
     tightName: 1.5, // the name is the only label left, so it takes the billing
-    tightNameBottom: 16, // px
+    tightNameBottom: 176, // leave room for the description and action on phones
     tightNameRight: 16, // px
     tightMetaWidth: 70, // vw of box, and so of filter region, around it
 
     // -- geometry, all at the reference window ---------------------------
     planeSize: 90, // long edge in px; aspect locked at 1.5 : 1
     count: PROJECTS.length, // one plane per project, so the deal comes out even
-    ringRadius: 340,
+    ringRadius: 160, // nine cards need a tighter arc than the original eighteen
     seed: 0, // where plane 0 sits, degrees (0 = 3 o'clock)
     radial: true, // long edge points outward; off = long edge along the ring
     radius: 6, // corner
@@ -87,6 +87,7 @@ export function defaultParams() {
     spinEase: "power2.inOut",
     spinDelay: 0,
     posX: -2, // fraction of half the viewport width
+    centreFront: true, // front plane stays centred as the ring radius changes
     posY: 0,
     endScale: 4.46,
     moveTime: 2.2,
@@ -105,9 +106,9 @@ export function defaultParams() {
     pickEase: "power3.inOut",
 
     // -- the intro heading, in the scene ---------------------------------
-    text: "Works '26",
+    text: "JIN Studio",
     textSize: 41,
-    textFont: "PP Neue Montreal",
+    textFont: "Satoshi",
     textWeight: 400,
     textTracking: 0, // em
     textColor: "#0a0a0a",
@@ -184,7 +185,7 @@ export function defaultParams() {
 
     // -- the cursor tag, drawn in the same shader pass --------------------
     tagFrom: 1024, // viewport width it needs; below that there is no cursor
-    tagText: "View",
+    tagText: "Open",
     tagSize: 14,
     tagWeight: 500,
     tagArrow: 14, // px, the svg in /public

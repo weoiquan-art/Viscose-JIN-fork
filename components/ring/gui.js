@@ -114,6 +114,7 @@ export function mountGui(GUI, { params, state, info, actions }) {
   onStage("spinDelay", 0, 15, 0.05, "spinDelay");
   stage.add(params, "spinEase", EASES).onChange(replay);
   stage.add(params, "posX", -4, 4, 0.005).name("move x");
+  stage.add(params, "centreFront").name("centre front card").onChange(replay);
   stage.add(params, "posY", -4, 4, 0.005).name("move y");
   stage.add(params, "endScale", 0.05, 8, 0.01).name("end scale");
   onStage("moveTime", 0.05, 30, 0.05, "moveTime");
@@ -127,7 +128,7 @@ export function mountGui(GUI, { params, state, info, actions }) {
   text
     // Only families with an @font-face block in globals.css — anything else
     // silently falls back to system sans and looks like a bug.
-    .add(params, "textFont", ["PP Neue Montreal", "Satoshi", "Geist"])
+    .add(params, "textFont", ["Satoshi", "Geist"])
     .name("family")
     .onChange(rebuildText);
   text.add(params, "textWeight", { Light: 300, Regular: 400 }).onChange(rebuildText); // prettier-ignore

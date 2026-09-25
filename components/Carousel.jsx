@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 
@@ -16,6 +17,7 @@ import { createSplitText } from "./ring/splitText";
 import { createTag, TAG_W, TAG_H } from "./ring/tag";
 import { defaultParams } from "./ring/params";
 import { IMAGE_FILES, PROJECTS } from "./ring/projects";
+import { ProjectDetails, ProjectFallback, ProjectLightbox } from "./ProjectUI";
 import {
   TAU,
   HALF_PI,
@@ -38,6 +40,13 @@ const blankTexture = () => {
 };
 
 export default function Carousel() {
+  const [active, setActive] = useState(-1);
+  const [openProject, setOpenProject] = useState(-1);
+  const [glReady, setGlReady] = useState(false);
+  const navigateRef = useRef(null);
+  const actionRef = useRef(null);
+  const historyModeRef = useRef("replace");
+  const closeProject = useCallback(() => setOpenProject(-1), []);
   const containerRef = useRef(null);
   const listRef = useRef(null);
   const itemsRef = useRef([]);
@@ -61,6 +70,8 @@ export default function Carousel() {
     let disposed = false;
 
     const params = defaultParams();
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) params.hover = false;
     // progress: the seed is born at screen centre
     // launch:   the seed travels out to its place on the ring
     // spread:   the rest peel off it and the ring draws
@@ -83,6 +94,21 @@ export default function Carousel() {
       console.error("[ring] could not create a WebGL context:", err);
       return;
     }
+    // Software and low-power WebGL can take more than 500ms per frame. GSAP's
+    // default lag smoothing then advances only 33ms and strands the intro.
+    gsap.ticker.lagSmoothing(0);
+    let shaderFailed = false;
+    renderer.debug.onShaderError = () => {
+      shaderFailed = true;
+      setGlReady(false);
+      renderer.setAnimationLoop(null);
+    };
+    const onContextLost = (event) => {
+      event.preventDefault();
+      if (!disposed) setGlReady(false);
+      renderer.setAnimationLoop(null);
+    };
+    renderer.domElement.addEventListener("webglcontextlost", onContextLost);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
@@ -120,7 +146,7 @@ export default function Carousel() {
       uK: { value: params.goo },
       uWobble: { value: params.wobble },
       uTime: { value: 0 },
-      uColor: { value: new THREE.Color("#0a0a0a") },
+      uColor: { value: new THREE.Color("#282522") },
       uAtlas: { value: blankTexture() }, // placeholder so the sampler is bound
       uGrid: { value: new THREE.Vector2(1, 1) },
       uBlend: { value: params.blend },
@@ -138,7 +164,7 @@ export default function Carousel() {
       uTag: { value: new THREE.Vector4() },
       uTagP: { value: new THREE.Vector4() },
       uTagQ: { value: new THREE.Vector4() },
-      uPage: { value: new THREE.Color("#fafafa") },
+      uPage: { value: new THREE.Color("#f3ede6") },
     };
 
     const mesh = new THREE.Mesh(
@@ -303,6 +329,7 @@ export default function Carousel() {
     // A click is turning the ring to a card. While this is up the momentum
     // above is suspended entirely, so the two cannot both drive spin.
     let picking = false;
+    let entrySkipped = false;
 
     let pointerTravel = 0; // tells a click from a drag
     let travelX = 0;
@@ -324,7 +351,7 @@ export default function Carousel() {
     // handed to the snap: the snap is a run-in for a throw that is nearly
     // spent and is shaped so it can only slow down, but a pick starts from a
     // standstill and has to accelerate.
-    const pick = (i) => {
+    const pick = (i, instant = false) => {
       const slot = TAU / Math.round(params.count);
       // Spread, plane i sits at seed + signedOffset(i) * slot + spin.
       const base = frontAngle - params.seed * DEG - signedOffset(i) * slot;
@@ -333,8 +360,15 @@ export default function Carousel() {
       const target = base + Math.round((state.spin - base) / TAU) * TAU;
 
       const slots = Math.abs(target - state.spin) / slot;
+      if (instant) {
+        spinVel = 0;
+        settling = false;
+        stopPick();
+        state.spin = target;
+        return slots >= 0.01;
+      }
       // Already there. Opening the project belongs here eventually.
-      if (slots < 0.01) return;
+      if (slots < 0.01) return false;
 
       spinVel = 0;
       settling = false;
@@ -344,13 +378,66 @@ export default function Carousel() {
         spin: target,
         // Root of the distance, not linear: a card eight slots round should
         // take longer than its neighbour but not eight times longer.
-        duration: params.pickTime * Math.sqrt(Math.max(1, slots)),
+        duration: reducedMotion
+          ? 0
+          : params.pickTime * Math.sqrt(Math.max(1, slots)),
         ease: params.pickEase,
         onComplete: () => {
           picking = false;
         },
       });
+      return true;
     };
+
+    const planeForProject = (projectIndex) => {
+      for (let i = 0; i < PROJECTS.length; i++) {
+        if (((params.imageOffset - signedOffset(i)) % PROJECTS.length + PROJECTS.length) % PROJECTS.length === projectIndex) return i;
+      }
+      return 0;
+    };
+    const selectProject = (index, fromHistory = false, instant = false) => {
+      if (index < 0 || index >= PROJECTS.length) return;
+      if (fromHistory) historyModeRef.current = "none";
+      else historyModeRef.current = "push";
+      if (!interactive) {
+        // A navigation during entry completes it before turning the ring.
+        tl?.kill();
+        entrySkipped = true;
+        state.progress = state.launch = state.spread = state.shift = 1;
+        state.spin = params.spinTurns * TAU;
+        for (const fade of splitText.fades) fade.value = 0;
+        if (loaderEl) loaderEl.style.opacity = "0";
+        if (listEl) listEl.style.opacity = "1";
+        interactive = true;
+        layout(0);
+      }
+      pick(planeForProject(index), instant);
+    };
+    navigateRef.current = selectProject;
+
+    const readHash = () => PROJECTS.findIndex((p) => `#${p.slug}` === window.location.hash);
+    const onHistory = () => {
+      const index = readHash();
+      if (index >= 0) selectProject(index, true);
+    };
+    window.addEventListener("popstate", onHistory);
+    window.addEventListener("hashchange", onHistory);
+
+    const onKeyDown = (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || openDialog()) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+      let index = -1;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") index = ((shown < 0 ? 0 : shown) + 1) % PROJECTS.length;
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") index = ((shown < 0 ? 0 : shown) - 1 + PROJECTS.length) % PROJECTS.length;
+      if (event.key === "Home") index = 0;
+      if (event.key === "End") index = PROJECTS.length - 1;
+      if (/^[1-9]$/.test(event.key)) index = Number(event.key) - 1;
+      if (index < 0 || index >= PROJECTS.length) return;
+      event.preventDefault();
+      selectProject(index);
+    };
+    const openDialog = () => document.querySelector('[role="dialog"][aria-modal="true"]');
+    window.addEventListener("keydown", onKeyDown);
 
     /* ------------------------------------------------------------ pointer */
     // World px, origin at screen centre, Y up — the space the shader works in,
@@ -479,7 +566,11 @@ export default function Carousel() {
     // only ever lands on the card the tag was offering.
     const onClick = () => {
       if (!interactive || pointerTravel >= 5 || over < 0) return;
-      pick(over);
+      const index = ((params.imageOffset - signedOffset(over)) % PROJECTS.length + PROJECTS.length) % PROJECTS.length;
+      if (!pick(over) && shown === index && !PROJECTS[index].pending && PROJECTS[index].slug !== "contact") {
+        if (PROJECTS[index].external?.url) window.open(PROJECTS[index].external.url, "_blank", "noopener,noreferrer");
+        else setOpenProject(index);
+      }
     };
 
     container.addEventListener("wheel", onWheel, { passive: false });
@@ -614,7 +705,10 @@ export default function Carousel() {
       // is why the window fit rides in here rather than on a dozen params.
       const shift = clamp01(state.shift);
       const g = (1 + (endScale - 1) * shift) * fit;
-      const cx = posX * viewW * 0.5 * shift;
+      const R = params.ringRadius * radiusK * g;
+      const cx = params.centreFront
+        ? -R * shift
+        : posX * viewW * 0.5 * shift;
       const cy = params.posY * viewH * 0.5 * shift;
 
       // Screen-space centre, for pointer maths. World Y is up, page Y is down.
@@ -639,7 +733,6 @@ export default function Carousel() {
       const sepExtent = params.radial ? H : W;
       const faceEdge = params.radial ? W : H;
 
-      const R = params.ringRadius * radiusK * g;
       const restingGap = 2 * R * Math.sin(step / 2) - sepExtent;
       info.restingGap = Math.round((restingGap / g) * 10) / 10;
       // The whole stretch plays out across this, so it is the yardstick.
@@ -1007,7 +1100,10 @@ export default function Carousel() {
       tl.addPause(">", () => {
         whenReady(() => {
           gsap.delayedCall(params.holdAfter, () => {
-            if (disposed || gen !== entryGen) return;
+            if (disposed || entrySkipped || gen !== entryGen) return;
+            // Remove the marker before resuming. A zero-length hold can land
+            // exactly on it, causing the next tick to pause the timeline again.
+            tl.removePause(tl.time());
             tl.resume();
             if (loaderEl) {
               gsap.to(loaderEl, {
@@ -1126,7 +1222,19 @@ export default function Carousel() {
       splitText.build();
       tag.build();
       styleMeta();
-      replay();
+      const initial = readHash();
+      if (entrySkipped) {
+        for (const fade of splitText.fades) fade.value = 0;
+      } else if (reducedMotion || initial >= 0) {
+        state.progress = state.launch = state.spread = state.shift = 1;
+        state.spin = params.spinTurns * TAU;
+        for (const fade of splitText.fades) fade.value = 0;
+        interactive = true;
+        if (loaderEl) loaderEl.style.opacity = "0";
+        if (listEl) listEl.style.opacity = "1";
+        layout(0);
+        if (initial >= 0) selectProject(initial, true, true);
+      } else replay();
     };
 
     // fonts.ready is reliable, but nothing here is worth a permanently blank
@@ -1177,13 +1285,18 @@ export default function Carousel() {
     /* ---------------------------------------------------------------- loop */
     const start = performance.now();
     let prevT = start;
+    let lastRender = -Infinity;
 
+    let displayed = false;
     renderer.setAnimationLoop(() => {
       const now = performance.now();
+      // Reduced motion freezes the shader's clock and repaints only as needed.
+      if (reducedMotion && now - lastRender < 80) return;
+      lastRender = now;
       // Clamped, so a backgrounded tab does not resume with one huge step.
       const dt = Math.min(0.05, (now - prevT) / 1000);
       prevT = now;
-      uniforms.uTime.value = (now - start) * 0.001;
+      uniforms.uTime.value = reducedMotion ? 0 : (now - start) * 0.001;
 
       if (interactive && !dragging && !picking) {
         state.spin += spinVel * dt;
@@ -1264,18 +1377,36 @@ export default function Carousel() {
       ) {
         announced = shown;
         meta.show(shown);
+        setActive(shown);
+        const hash = `#${PROJECTS[shown].slug}`;
+        if (location.hash !== hash) {
+          if (historyModeRef.current === "none" || historyModeRef.current === "replace") {
+            history.replaceState(null, "", hash);
+          } else {
+            history.pushState(null, "", hash);
+          }
+        }
+        historyModeRef.current = "push";
       }
 
       renderer.render(scene, camera);
+      if (!shaderFailed && !disposed && !displayed) {
+        displayed = true;
+        setGlReady(true);
+      }
     });
 
     return () => {
       disposed = true;
+      gsap.ticker.lagSmoothing(500, 33);
       clearTimeout(holdTimer);
       clearTimeout(fontFallback);
       renderer.setAnimationLoop(null);
 
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("popstate", onHistory);
+      window.removeEventListener("hashchange", onHistory);
+      window.removeEventListener("keydown", onKeyDown);
       container.removeEventListener("wheel", onWheel);
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointermove", onPointerMove);
@@ -1305,7 +1436,9 @@ export default function Carousel() {
       // is reached the renderer above cannot be constructed at all.
       renderer.dispose();
       renderer.forceContextLoss();
+      renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
       renderer.domElement.remove();
+      navigateRef.current = null;
     };
   }, []);
 
@@ -1314,7 +1447,20 @@ export default function Carousel() {
       {/* touch-none, or the browser claims the gesture for panning and the
           pointermove stream dies mid-drag. Nothing here scrolls — the swipe
           is the carousel. */}
-      <div ref={containerRef} className="fixed inset-0 touch-none" />
+      <ProjectFallback hidden={glReady} />
+      <div ref={containerRef} aria-hidden="true" className="fixed inset-0 touch-none" style={{ visibility: glReady ? "visible" : "hidden" }} />
+      {glReady && <>
+        <header className="brand-mark">
+          <button type="button" aria-label="回到第一张卡" onClick={() => navigateRef.current?.(0)}><img src="/brand/raven.svg" alt="" /> <span>JIN Studio</span></button>
+        </header>
+        <label className="mobile-index">作品
+          <select aria-label="选择作品" value={active < 0 ? 0 : active} onChange={(e) => navigateRef.current?.(Number(e.target.value))}>
+            {PROJECTS.map((p, i) => <option key={p.slug} value={i}>{String(i + 1).padStart(2, "0")} · {p.name}</option>)}
+          </select>
+        </label>
+        <ProjectDetails project={PROJECTS[active]} index={active} actionRef={actionRef} onOpen={() => setOpenProject(active)} />
+        <ProjectLightbox project={PROJECTS[openProject]} onClose={closeProject} returnFocusRef={actionRef} />
+      </>}
 
       {/* Never takes the pointer: the canvas underneath handles the wheel and
           the drag, and the column has no business interrupting a throw that
@@ -1324,21 +1470,16 @@ export default function Carousel() {
         ref={listRef}
         aria-label="Projects"
         style={{
-          fontFamily: '"Satoshi", ui-sans-serif, system-ui, sans-serif',
+          fontFamily: '"Satoshi", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif',
+          visibility: glReady ? "visible" : "hidden",
         }}
-        className="pointer-events-none fixed right-[12vw] top-[2.4vh] z-10 flex flex-col items-start text-right leading-[1.4] tracking-[0.01em] text-[#0a0a0a] opacity-0 max-sm:hidden"
+        className="index-list fixed right-[5vw] top-[2.4vh] z-10 flex flex-col items-start text-right leading-[1.4] tracking-[0.01em] text-[#0a0a0a] opacity-0"
       >
         {PROJECTS.map((p, i) => (
           <li
-            key={p.file}
-            ref={(el) => {
-              itemsRef.current[i] = el;
-            }}
-            // No transition, deliberately: the colour turns over the moment
-            // the ring passes the halfway point between two slots.
-            style={{ opacity: 0.2 }}
+            key={p.slug}
           >
-            {p.name}
+            <button type="button" ref={(el) => { itemsRef.current[i] = el; }} style={{ opacity: 0.2 }} onClick={() => navigateRef.current?.(i)} aria-label={`${String(i + 1).padStart(2, "0")} ${p.name}`}>{p.name}</button>
           </li>
         ))}
       </ul>
@@ -1369,6 +1510,7 @@ export default function Carousel() {
               metaRef.current[side].box = el;
             }}
             aria-hidden="true"
+            style={{ visibility: glReady ? "visible" : "hidden" }}
             className="pointer-events-none fixed top-1/2 z-10 -translate-y-1/2 tracking-[-0.01em] text-[#0a0a0a]"
           >
             <span
@@ -1410,6 +1552,7 @@ export default function Carousel() {
       <div
         ref={loaderRef}
         aria-hidden="true"
+        style={{ visibility: glReady ? "visible" : "hidden" }}
         className="pointer-events-none fixed left-1/2 z-10 -translate-x-1/2 tracking-[-0.01em] text-[#0a0a0a]"
       />
 
