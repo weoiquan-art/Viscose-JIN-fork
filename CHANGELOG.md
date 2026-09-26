@@ -6,7 +6,7 @@
 - 右场新增随停稳卡交叉淡入的标题、主内容、简介和操作；两部本地影片在 16:9 原生播放器中按需播放，桌面背景复用原片做静音低透明度预览，离开后暂停淡出。社媒卡继续只打开原帖。
 - 区域驱动限定左栏；移入右场或静区即归零，仍由原阻尼和吸卡结尾。移动端改为单列舞台加作品选择框，隐藏半弧与背景动片。减少动态效果也关闭动片。
 - `catalog.js` 从原 `projects.js` 派生当前可用卡和布局类型，缺图的三视图暂不进入环；新档案、设定、过程与场景版式可接真实素材，不创建假卡。当前八张卡及素材记录均可追溯。
-- 新默认参数：`navWidth=0.34`、`navFront=0.17`、`navCardFit=0.9`、`mobileAt=768`、`stagePadding=42`、`stageTime=0.65`、`navMetaTop=14`、`navMetaBottom=13`、`bgVideoOpacity=0.22`，可在开发面板调整。待 Cloudflare 分支预览审阅后再考虑正式发布。
+- 新默认参数：`navWidth=0.34`、`navFront=0.17`、`navCardFit=0.9`、`mobileAt=768`、`stagePadding=42`、`stageTime=0.65`、`navMetaTop=14`、`navMetaBottom=13`、`bgVideoOpacity=0.22`，可在开发面板调整。代码提交 `89deb84` 的 [Cloudflare 分支预览](https://7be84fbd.viscose-jin-fork.pages.dev/) 已部署；正式发布待用户审阅。
 
 ## 2026-09-26 · 轮盘互动优化（预览分支）
 
