@@ -12,8 +12,10 @@ import { TAU } from "./utils";
  * `replay` for anything baked into the entry timeline when it is built.
  */
 export function mountGui(GUI, { params, state, info, actions }) {
-  const { replay, refit, styleMeta, setThreshold, rebuildText, rebuildTag } =
-    actions;
+  const {
+    replay, refit, styleMeta, styleBackdrop, setThreshold, rebuildText,
+    rebuildTag,
+  } = actions;
 
   const gui = new GUI({ title: "ring" });
 
@@ -187,14 +189,28 @@ export function mountGui(GUI, { params, state, info, actions }) {
   // -- input ---------------------------------------------------------------
   const scroll = gui.addFolder("scroll");
   scroll.add(params, "scrollSpeed", 0, 0.05, 0.0001);
+  scroll.add(params, "wheelDecay", 0.5, 0.999, 0.001);
   scroll.add(params, "damping", 0.5, 0.999, 0.001);
   scroll.add(params, "maxSpeed", 0.5, 60, 0.5);
+  scroll.add(params, "zoneDead", 0, 0.45, 0.005)
+    .name("centre dead zone").onChange(styleBackdrop);
+  scroll.add(params, "zoneMaxSpeed", 0, 12, 0.05).name("edge target speed");
+  scroll.add(params, "zoneChase", 0.01, 1, 0.005).name("input chase");
+  scroll.add(params, "zoneCurve", 0.3, 4, 0.05).name("zone curve");
+  scroll.add(params, "zoneHint", 0, 0.5, 0.01)
+    .name("hint opacity").onChange(styleBackdrop);
+  scroll.add(params, "zoneInvert").name("reverse zones");
   scroll.add(params, "dragSpeed", 0, 5, 0.01);
   scroll.add(params, "snap");
   scroll.add(params, "snapTime", 0.2, 3, 0.05).name("snap time (s)");
   scroll.add(params, "snapFrom", 0.1, 20, 0.1).name("settle below");
   scroll.add(params, "pickTime", 0.1, 2, 0.05).name("pick, per slot (s)");
   scroll.add(params, "pickEase", EASES).name("pick ease");
+
+  const background = gui.addFolder("background");
+  background.add(params, "bgOpacity", 0, 0.5, 0.01).onChange(styleBackdrop);
+  background.add(params, "bgBlur", 0, 80, 1).onChange(styleBackdrop);
+  background.add(params, "bgTime", 0.1, 2, 0.05).onChange(styleBackdrop);
 
   const pointer = gui.addFolder("pointer");
   pointer.add(params, "hover").name("enabled");

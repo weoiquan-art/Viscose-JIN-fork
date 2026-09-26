@@ -17,6 +17,7 @@ import { createSplitText } from "./ring/splitText";
 import { createTag, TAG_W, TAG_H } from "./ring/tag";
 import { defaultParams } from "./ring/params";
 import { IMAGE_FILES, PROJECTS } from "./ring/projects";
+import { backgroundForProject } from "./ring/background";
 import { ProjectDetails, ProjectFallback, ProjectLightbox } from "./ProjectUI";
 import {
   TAU,
@@ -53,6 +54,9 @@ export default function Carousel() {
   const loaderRef = useRef(null);
   const liveRef = useRef(null);
   const cutRef = useRef(null);
+  const backdropRef = useRef(null);
+  const backdropLayersRef = useRef([]);
+  const zoneHintsRef = useRef(null);
   // Per side: the box that positions the lockup, the filtered wrapper the goo
   // happens inside, the two rows that melt within it, and one more row outside
   // for words carrying over unchanged. See ring/meta.js.
@@ -70,8 +74,36 @@ export default function Carousel() {
     let disposed = false;
 
     const params = defaultParams();
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (reducedMotion) params.hover = false;
+    const styleBackdrop = () => {
+      const el = backdropRef.current;
+      if (!el) return;
+      el.style.setProperty("--bg-opacity", params.bgOpacity);
+      el.style.setProperty("--bg-blur", `${params.bgBlur}px`);
+      el.style.setProperty("--bg-time", `${params.bgTime}s`);
+      el.style.setProperty("--zone-dead", `${params.zoneDead * 100}vh`);
+      el.style.setProperty("--zone-hint-opacity", params.zoneHint);
+    };
+    styleBackdrop();
+    let foreground = 0;
+    let backdropFrame = 0;
+    const showBackdrop = (index) => {
+      const layers = backdropLayersRef.current;
+      if (layers.length < 2 || !layers[0] || !layers[1]) return;
+      const next = 1 - foreground;
+      const source = backgroundForProject(PROJECTS[index]);
+      layers[next].style.backgroundImage = source ? `url("${source}")` : "none";
+      layers[next].style.opacity = "0";
+      cancelAnimationFrame(backdropFrame);
+      backdropFrame = requestAnimationFrame(() => {
+        layers[foreground].style.opacity = "0";
+        layers[next].style.opacity = source ? "var(--bg-opacity)" : "0";
+        foreground = next;
+      });
+    };
     // progress: the seed is born at screen centre
     // launch:   the seed travels out to its place on the ring
     // spread:   the rest peel off it and the ring draws
@@ -315,6 +347,9 @@ export default function Carousel() {
     let frontAngle = 0;
     let interactive = false;
     let spinVel = 0; // rad/s
+    let wheelTarget = 0;
+    let zoneTarget = 0;
+    let zoneDriving = false;
     let dragging = false;
     let dragPrevAngle = 0;
     let dragPrevTime = 0;
@@ -352,6 +387,7 @@ export default function Carousel() {
     // spent and is shaped so it can only slow down, but a pick starts from a
     // standstill and has to accelerate.
     const pick = (i, instant = false) => {
+      wheelTarget = 0;
       const slot = TAU / Math.round(params.count);
       // Spread, plane i sits at seed + signedOffset(i) * slot + spin.
       const base = frontAngle - params.seed * DEG - signedOffset(i) * slot;
@@ -446,7 +482,7 @@ export default function Carousel() {
     // `inside` means the position is worth reading, which is what the card hit
     // test needs. Whether the softening is *on* is a separate question,
     // because on touch it is not simply "is there a pointer".
-    const pointer = { x: 0, y: 0, inside: false, seeded: false };
+    const pointer = { x: 0, y: 0, inside: false, seeded: false, type: "" };
     // What the ring actually follows: the cursor, smoothed. How far this
     // trails the real pointer stands in for speed and drives the wake.
     const cursor = { x: 0, y: 0, amt: 0, wake: 0 };
@@ -476,6 +512,7 @@ export default function Carousel() {
 
     const trackPointer = (e) => {
       coarse = e.pointerType === "touch";
+      pointer.type = e.pointerType;
       pointer.x = e.clientX - bounds.left - viewW * 0.5;
       pointer.y = viewH * 0.5 - (e.clientY - bounds.top);
       pointer.inside = true;
@@ -492,16 +529,59 @@ export default function Carousel() {
       pointer.inside = false;
     };
 
+    const onWindowBlur = () => {
+      pointer.inside = false;
+    };
+    window.addEventListener("blur", onWindowBlur);
+
+    const updateZone = () => {
+      zoneTarget = 0;
+      const hoveredProject =
+        over >= 0
+          ? (((params.imageOffset - signedOffset(over)) % PROJECTS.length) +
+              PROJECTS.length) %
+            PROJECTS.length
+          : -1;
+      if (
+        interactive &&
+        !dragging &&
+        !picking &&
+        !reducedMotion &&
+        pointer.inside &&
+        pointer.type === "mouse" &&
+        hoveredProject !== shown &&
+        !openDialog()
+      ) {
+        const distance = Math.abs(pointer.y) / Math.max(1, viewH);
+        const amount = smoothstep(params.zoneDead, 0.5, distance);
+        const direction = pointer.y > 0 ? -1 : 1;
+        zoneTarget =
+          direction *
+          (params.zoneInvert ? -1 : 1) *
+          params.zoneMaxSpeed *
+          Math.pow(amount, params.zoneCurve);
+      }
+      zoneDriving = Math.abs(zoneTarget) > 0.001;
+      const hints = zoneHintsRef.current;
+      if (hints) {
+        const zone = zoneDriving ? (pointer.y > 0 ? "top" : "bottom") : "idle";
+        if (hints.dataset.zone !== zone) hints.dataset.zone = zone;
+      }
+    };
+
     const onWheel = (e) => {
-      if (!interactive) return;
+      if (!interactive || reducedMotion || openDialog()) return;
       e.preventDefault();
       // Trackpads send horizontal deltas too; take whichever dominates.
-      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const raw = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const d = raw * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? viewH : 1);
       // Fresh input hands the ring back to its own momentum.
       stopPick();
       settling = false;
-      spinVel += d * params.scrollSpeed;
-      spinVel = Math.max(-params.maxSpeed, Math.min(params.maxSpeed, spinVel));
+      wheelTarget = Math.max(
+        -params.maxSpeed,
+        Math.min(params.maxSpeed, wheelTarget + d * params.scrollSpeed),
+      );
     };
 
     const onPointerDown = (e) => {
@@ -509,11 +589,12 @@ export default function Carousel() {
       travelX = e.clientX;
       travelY = e.clientY;
       trackPointer(e);
-      if (!interactive) return;
+      if (!interactive || reducedMotion || openDialog()) return;
       stopPick();
       if (coarse) beginHold();
       dragging = true;
       settling = false;
+      wheelTarget = 0;
       spinVel = 0;
       dragPrevAngle = pointerAngle(e);
       dragPrevTime = performance.now();
@@ -584,7 +665,8 @@ export default function Carousel() {
     const updatePointer = (dt) => {
       // Held off until the entry finishes, so the cursor cannot soften the
       // ring while the timeline is still drawing it.
-      const live = params.hover && engaged() && pointer.seeded && interactive;
+      const live =
+        params.hover && engaged() && pointer.seeded && interactive && !zoneDriving;
       cursor.amt += ((live ? 1 : 0) - cursor.amt) * chase(dt, 0.12);
 
       const k = chase(dt, params.lag);
@@ -1259,6 +1341,7 @@ export default function Carousel() {
               replay,
               refit,
               styleMeta,
+              styleBackdrop,
               setThreshold: meta.setThreshold,
               rebuildText: () => {
                 splitText.build();
@@ -1299,6 +1382,17 @@ export default function Carousel() {
       uniforms.uTime.value = reducedMotion ? 0 : (now - start) * 0.001;
 
       if (interactive && !dragging && !picking) {
+        updateZone();
+        const inputTarget = Math.max(
+          -params.maxSpeed,
+          Math.min(params.maxSpeed, zoneTarget + wheelTarget),
+        );
+        if (Math.abs(inputTarget) > 0.01) {
+          spinVel += (inputTarget - spinVel) * chase(dt, params.zoneChase);
+          settling = false;
+        }
+        wheelTarget *= Math.pow(params.wheelDecay, dt * 60);
+        if (Math.abs(wheelTarget) < 0.01) wheelTarget = 0;
         state.spin += spinVel * dt;
         spinVel *= Math.pow(params.damping, dt * 60);
 
@@ -1323,7 +1417,11 @@ export default function Carousel() {
           // lets snapTime read back as seconds.
           const rate = 4.8 / Math.max(0.05, params.snapTime);
 
-          if (!settling && Math.abs(spinVel) < engage) {
+          if (
+            !settling &&
+            Math.abs(inputTarget) <= 0.01 &&
+            Math.abs(spinVel) < engage
+          ) {
             // Committed from where the coast alone would have left it, so it
             // carries on to the slot it was already heading for rather than
             // pulling up short. Measured off the seed and off wherever front
@@ -1360,6 +1458,11 @@ export default function Carousel() {
         }
       }
 
+      if (!interactive || dragging || picking) {
+        zoneDriving = false;
+        if (zoneHintsRef.current) zoneHintsRef.current.dataset.zone = "idle";
+      }
+
       tickLoader(dt);
       updatePointer(dt);
       layout(dt);
@@ -1378,6 +1481,7 @@ export default function Carousel() {
         announced = shown;
         meta.show(shown);
         setActive(shown);
+        showBackdrop(shown);
         const hash = `#${PROJECTS[shown].slug}`;
         if (location.hash !== hash) {
           if (historyModeRef.current === "none" || historyModeRef.current === "replace") {
@@ -1398,6 +1502,7 @@ export default function Carousel() {
 
     return () => {
       disposed = true;
+      cancelAnimationFrame(backdropFrame);
       gsap.ticker.lagSmoothing(500, 33);
       clearTimeout(holdTimer);
       clearTimeout(fontFallback);
@@ -1407,6 +1512,7 @@ export default function Carousel() {
       window.removeEventListener("popstate", onHistory);
       window.removeEventListener("hashchange", onHistory);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("blur", onWindowBlur);
       container.removeEventListener("wheel", onWheel);
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointermove", onPointerMove);
@@ -1448,7 +1554,26 @@ export default function Carousel() {
           pointermove stream dies mid-drag. Nothing here scrolls — the swipe
           is the carousel. */}
       <ProjectFallback hidden={glReady} />
-      <div ref={containerRef} aria-hidden="true" className="fixed inset-0 touch-none" style={{ visibility: glReady ? "visible" : "hidden" }} />
+      <div ref={backdropRef} className="project-backdrop" aria-hidden="true">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            ref={(el) => { backdropLayersRef.current[i] = el; }}
+            className="backdrop-media"
+          />
+        ))}
+        <div className="backdrop-scrim" />
+        <div ref={zoneHintsRef} className="zone-hints" data-zone="idle">
+          <div className="zone-guide zone-guide-top"><span>↑</span></div>
+          <div className="zone-guide zone-guide-bottom"><span>↓</span></div>
+        </div>
+      </div>
+      <div
+        ref={containerRef}
+        aria-hidden="true"
+        className="fixed inset-0 z-[1] touch-none"
+        style={{ visibility: glReady ? "visible" : "hidden" }}
+      />
       {glReady && <>
         <header className="brand-mark">
           <button type="button" aria-label="回到第一张卡" onClick={() => navigateRef.current?.(0)}><img src="/brand/raven.svg" alt="" /> <span>JIN Studio</span></button>

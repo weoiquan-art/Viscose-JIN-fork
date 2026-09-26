@@ -21,6 +21,17 @@ button, select { cursor: pointer; }
 .index-list button:hover, .index-list button:focus-visible { color: #854c39; opacity: 1 !important; }
 .mobile-index { display: none; }
 
+.project-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--paper); --bg-opacity: .26; --bg-blur: 38px; --bg-time: 1s; --zone-dead: 12vh; --zone-hint-opacity: .16; }
+.backdrop-media { position: absolute; inset: -12%; background-position: center; background-size: cover; filter: blur(var(--bg-blur)); transform: scale(1.1); opacity: 0; transition: opacity var(--bg-time) ease; will-change: opacity; }
+.backdrop-scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(243 237 230 / 55%), rgb(243 237 230 / 21%) 45%, rgb(243 237 230 / 55%)); }
+.zone-hints { position: absolute; inset: 0; color: var(--ink); }
+.zone-guide { position: absolute; left: 4vw; right: 4vw; height: 1px; opacity: calc(var(--zone-hint-opacity) * .22); background: linear-gradient(90deg, currentColor 0 15%, transparent 15% 85%, currentColor 85%); transition: opacity .35s ease; }
+.zone-guide span { position: absolute; left: 0; top: -18px; font: 13px "Geist", sans-serif; }
+.zone-guide-top { top: calc(50% - var(--zone-dead)); }
+.zone-guide-bottom { top: calc(50% + var(--zone-dead)); }
+.zone-guide-bottom span { top: 5px; }
+.zone-hints[data-zone="top"] .zone-guide-top, .zone-hints[data-zone="bottom"] .zone-guide-bottom { opacity: var(--zone-hint-opacity); }
+
 .project-details { position: fixed; z-index: 20; left: max(24px, 5.5vw); bottom: max(24px, 5vh); max-width: min(380px, 35vw); padding: 17px 21px 19px; background: rgb(243 237 230 / 87%); border: 1px solid rgb(83 71 63 / 20%); box-shadow: 0 14px 44px rgb(49 36 26 / 7%); backdrop-filter: blur(14px); animation: details-in .3s ease both; }
 .project-kicker { margin: 0 0 7px; font-family: "Geist", sans-serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 .project-description { margin: 0 0 12px; font-size: clamp(12px, 1vw, 15px); line-height: 1.5; }
@@ -50,7 +61,7 @@ button, select { cursor: pointer; }
 .project-fallback h1 { font-size: 25px; margin: 2px 0 0; font-weight: 500; }
 .fallback-intro { font-size: 13px; margin: 20px 0; }
 .fallback-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
-.fallback-grid article { background: #e8dfd3; border: 1px solid var(--rule); }
+.fallback-grid article { background-color: #e8dfd3; background-position: center; background-size: cover; border: 1px solid var(--rule); }
 .fallback-grid article > img { width: 100%; height: 210px; display: block; object-fit: contain; }
 .fallback-grid article > div { padding: 15px; background: #f3ede6; min-height: 150px; }
 .fallback-grid small { font: 11px "Geist", sans-serif; }
@@ -64,6 +75,8 @@ button, select { cursor: pointer; }
   .project-details { left: 18px; bottom: 19px; max-width: 46vw; }
 }
 @media (max-width: 640px) {
+  .backdrop-media { filter: blur(16px); }
+  .zone-hints { display: none; }
   .brand-mark { left: 12px; top: 10px; }
   .brand-mark img { width: 31px; height: 25px; }
   .brand-mark span { font-size: 12px; }
@@ -83,5 +96,7 @@ button, select { cursor: pointer; }
   .lightbox-image, .lightbox-panel video { max-height: calc(100dvh - 84px); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .zone-hints { display: none; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+@media (hover: none) { .zone-hints { display: none; } }

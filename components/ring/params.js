@@ -95,13 +95,23 @@ export function defaultParams() {
     moveDelay: 0.2,
 
     // -- scroll / drag / click, live once the entry finishes --------------
-    scrollSpeed: 0.0022, // rad/s of angular velocity per px of wheel delta
-    damping: 0.94, // velocity kept per 60fps frame
+    scrollSpeed: 0.0018, // wheel delta to target velocity, rad/s per px
+    wheelDecay: 0.94, // target velocity kept per 60fps frame after wheel input
+    damping: 0.965, // velocity kept per 60fps frame
     maxSpeed: 12, // rad/s, so one flick cannot run away
+    zoneDead: 0.12, // fraction of viewport height on either side of centre
+    zoneMaxSpeed: 1.4, // target angular velocity at the viewport edge
+    zoneChase: 0.16, // velocity's per-frame response to active input
+    zoneCurve: 1.3, // exponent after smoothstep, for slower movement near centre
+    zoneHint: 0.16, // maximum opacity of the directional guides
+    zoneInvert: false,
+    bgOpacity: 0.26, // image layer over the paper, before the text scrim
+    bgBlur: 38, // CSS px; reduced on small screens
+    bgTime: 1, // seconds for the two image layers to crossfade
     dragSpeed: 1,
     snap: true, // settle with a plane facing front
-    snapTime: 0.8, // run-in, once the flick itself is spent
-    snapFrom: 1, // rad/s under which the ring commits to a slot
+    snapTime: 1.05, // run-in, once the flick itself is spent
+    snapFrom: 0.7, // rad/s under which the ring commits to a slot
     pickTime: 0.55, // click-to-centre: seconds for one slot, root-scaled
     pickEase: "power3.inOut",
 

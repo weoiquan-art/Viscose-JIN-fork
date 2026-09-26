@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from "react";
 import { CONTACT_LINKS, PROJECTS } from "./ring/projects";
+import { backgroundForProject } from "./ring/background";
 
 const outbound = (href) => href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {};
 
@@ -74,8 +75,13 @@ export function ProjectFallback({ hidden }) {
       <header><img src="/brand/raven.svg" alt="" /><div><p>JIN Studio</p><h1>作品目录</h1></div></header>
       <p className="fallback-intro">选择作品查看图像、影片或原始链接。</p>
       <div className="fallback-grid">
-        {PROJECTS.map((p, i) => (
-          <article id={p.slug} key={p.slug}>
+        {PROJECTS.map((p, i) => {
+          const background = backgroundForProject(p);
+          return <article
+            id={p.slug}
+            key={p.slug}
+            style={{ backgroundImage: background ? `linear-gradient(rgb(243 237 230 / 70%), rgb(243 237 230 / 70%)), url("${background}")` : undefined }}
+          >
             <img src={`/${p.file}`} alt={p.pending ? "服装三视图待提供" : p.name} />
             <div><small>{String(i + 1).padStart(2, "0")} / {p.type}</small><h2>{p.name}</h2><p>{p.description}</p>
               {p.external ? <a href={p.external.url} target="_blank" rel="noopener noreferrer">Watch on {p.external.platform} ↗</a>
@@ -84,8 +90,8 @@ export function ProjectFallback({ hidden }) {
                     : p.slug === "contact" ? <div className="fallback-links">{CONTACT_LINKS.map((link) => <a key={link.label} href={link.href} {...outbound(link.href)}>{link.label}: {link.text} ↗</a>)}</div>
                       : <span>素材待提供</span>}
             </div>
-          </article>
-        ))}
+          </article>;
+        })}
       </div>
     </main>
   );

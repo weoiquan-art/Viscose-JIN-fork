@@ -15,4 +15,4 @@
 - Next.js 16、React 19、Three.js、GSAP、Tailwind v4，基于 Viscose 原 shader 环形轮盘。旧版“保持纯静态 HTML 不迁移框架”决定在此 Fork 作废。
 - 渡鸦只作为 favicon 和可点击的角落标记；旧版大型 Hero 与六章节 Canvas 2D 草稿属于先前探索，本次整站为单轮盘。
 - 提供键盘、减少动态效果、小屏触控、无 JS/WebGL 的完整目录降级。
-- 首选将此 Fork 的预览分支导入 Vercel。正式发布和替换现有站点都需先由用户检查预览 URL。
+- Cloudflare Pages 使用本 Fork 的静态导出 `out/`。本分支作为预览供用户检查；正式发布和替换现有站点仍由用户在预览后决定。
