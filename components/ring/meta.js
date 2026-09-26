@@ -1,5 +1,5 @@
 import gsap from "gsap";
-import { PROJECTS } from "./projects";
+import { PROJECTS } from "./catalog";
 
 /**
  * The two lockups of type either side of the ring: [number . name] on the
@@ -124,7 +124,9 @@ function createGroup(side, groups, params) {
     draw();
     gsap.to(m, {
       t: 1,
-      duration: params.nameMorphTime,
+      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? 0
+        : params.nameMorphTime,
       ease: params.nameEase,
       onUpdate: draw,
     });
@@ -161,7 +163,7 @@ export function createMeta(refs, params) {
     const bigVw = params.nameSize * textK * (tight ? params.tightName : 1);
     const big = `${bigVw}vw`;
     const small = `${params.idxSize * textK}vw`;
-    const bigFace = `"${params.nameFont}", ui-sans-serif, system-ui, sans-serif`;
+    const bigFace = `"${params.nameFont}", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif`;
     const smallFace = `"${params.idxFont}", ui-sans-serif, system-ui, sans-serif`;
     const bigWeight = `${params.nameWeight}`;
     const smallWeight = `${params.idxWeight}`;
@@ -184,10 +186,17 @@ export function createMeta(refs, params) {
       }
       g.box.style.display = "";
 
-      g.box.style.width = `${corner ? params.tightMetaWidth : params.metaWidth}vw`; // prettier-ignore
+      const nav = viewW >= params.mobileAt;
+      g.box.style.width = `${nav ? params.navWidth * 100 - params.metaLeft : corner ? params.tightMetaWidth : params.metaWidth}vw`; // prettier-ignore
       g.box.style.height = `${h}vw`;
 
-      if (corner) {
+      if (nav) {
+        g.box.style.top = isRight ? "auto" : `${params.navMetaTop}vh`;
+        g.box.style.bottom = isRight ? `${params.navMetaBottom}vh` : "auto";
+        g.box.style.left = `${params.metaLeft}vw`;
+        g.box.style.right = "auto";
+        g.box.style.transform = "none";
+      } else if (corner) {
         // The box is three times the type's height, so placing it at the
         // offset asked for would sit the words half a box too high. Drop it by
         // the difference and the type lands where the number says.
@@ -218,7 +227,7 @@ export function createMeta(refs, params) {
         layer.style.justifyContent =
           corner || isRight ? "flex-end" : "flex-start";
         const row = layer.firstElementChild;
-        row.style.gap = `${isRight ? params.metaGapR : params.metaGapL}vw`;
+        row.style.gap = `${nav ? 1 : isRight ? params.metaGapR : params.metaGapL}vw`;
         const [lead, trail] = row.children;
         // The number is what goes in the corner layout. Its morph carries on
         // underneath, so nothing needs resyncing on the way back out.
@@ -254,7 +263,8 @@ export function createMeta(refs, params) {
     right.set([p.type, p.year]);
     // The groups are hidden from the accessibility tree, so the card is
     // announced once, in full, from the live region instead of four times.
-    if (live) live.textContent = `${p.name}. ${p.type}, ${p.year}.`;
+    if (live)
+      live.textContent = `${p.name}. ${p.type}${p.year ? `, ${p.year}` : ""}.`;
   };
 
   const dispose = () => {

@@ -4,6 +4,14 @@ Working notes for this repo. Read this before changing anything under
 `components/` — most of the code is one WebGL machine and a lot of it is
 non-obvious in ways that look like bugs.
 
+**JIN Studio adaptation, 2026-09-25:** The original notes below describe the
+upstream eighteen-card demo. This Fork has nine JIN Studio cards driven by
+`components/ring/projects.js` (eight currently available, one pending asset
+excluded by `components/ring/catalog.js`); the original third-party images and commercial
+font were removed. See `PRODUCT.md`, `DESIGN.md`, `ASSETS.md` and `QA.md` for
+current content, interaction and review status. Retain the shader and MIT
+attribution when changing this version.
+
 ## What this is
 
 A single-page portfolio carousel. Eighteen project cards sit on a ring that is

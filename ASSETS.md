@@ -1,0 +1,23 @@
+# 素材清单
+
+更新：2026-09-26。全部作品素材来自用户提供的文件或链接；封面从所给 MP4 截帧，没有替换为网图。当前八张可用卡进入图集、环、索引、舞台和静态目录。
+
+| 锚点 | 卡片来源 | 原尺寸/时长 | 卡面 | 动作与降级 |
+| --- | --- | --- | --- | --- |
+| `#nuonuo` | `media/nuonuo.png` | 569×567 | 原图等比留白 | 全图；目录直达原图 |
+| `#phoebe` | `media/phoebe.png` | 1006×959 | 原图等比留白 | 全图；目录直达原图 |
+| `#sera-chibi` | `media/sera-chibi.png` | 1170×1345 | 原图等比留白 | 全图；目录直达原图 |
+| `#sera-portrait` | `media/sera-portrait.png` | 1145×1374 | 原图等比留白 | 全图；目录直达原图 |
+| `#sera-costume` | 待提供服装三视图 | 待提供 | 素材记录保留 | 暂不生成导航卡；收到原图后恢复 |
+| `#trio-film` | `media/trio-film.mp4` | 720×1280 / 15.21 秒 | `media/trio-poster.jpg`，约 12 秒处 | 点击后原生播放器；目录直达 MP4 |
+| `#homeworld-film` | `media/homeworld-film.mp4` | 1280×720 / 25.06 秒 | `media/homeworld-poster.jpg`，约 12 秒处 | 示范试片；点击后原生播放器；目录直达 MP4 |
+| `#social-01` | [Facebook 原帖](https://fb.watch/v/3U81sYFlV/) | 第三方影片不复制 | 暂用本地三小只影片静帧；帖子专用封面待提供 | 新标签打开原帖，`noopener noreferrer` |
+| `#contact` | 用户提供的联络链接 | — | 自制文字 SVG | 邮件 / Instagram / TikTok / GitHub / 课程站直链 |
+
+待用户补充：Sera 服装三视图、过程对比、场景及档案文案、Facebook 帖子专用封面与更多原帖清单、Contact 最终内容。已有两部影片保留原文件，均为 720p 以内；没有新素材的类型不建空卡。缺失年份保留空白。`public/brand/raven.svg` 从用户现有站点仓库沿用。
+
+## 花园入口（2026-09-26）
+
+用户附件 `image(5).png`（日景）、`image(6).png`（夜景）作为图像来源。花园 clean plate 由内置图像编辑移除原水车并制作同构图夜景，交付 `public/garden/day.webp` 与 `night.webp`，保留原生 1672×941，不通过放大冒充 2x 细节。
+
+新增程序建模水车 `public/garden/waterwheel.glb`；轮子与固定支架分组，包含嵌入木纹材质。静态备用图由同模型渲染。建模源码、尺寸、导出方式和图像编辑提示见 `public/garden/README.md`。

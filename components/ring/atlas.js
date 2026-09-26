@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { IMAGE_FILES } from "./projects";
+import { IMAGE_FILES, PROJECTS } from "./projects";
 
 // Cell aspect matches the plane's 1.5 : 1 so nothing is distorted.
 const CELL_W = 512;
@@ -54,8 +54,12 @@ export function buildAtlas(files = IMAGE_FILES, onProgress) {
     const x = (i % cols) * CELL_W;
     const y = Math.floor(i / cols) * CELL_H;
 
-    // Cover fit: fill the cell, crop the overflow, never squash.
-    const scale = Math.max(CELL_W / img.width, CELL_H / img.height);
+    // Portraits and vertical footage need their whole composition visible.
+    // Cover only the supplied landscape film and the typographic placeholders.
+    const contained = PROJECTS[i]?.fit === "contain";
+    const scale = contained
+      ? Math.min(CELL_W * 0.92 / img.width, CELL_H * 0.92 / img.height)
+      : Math.max(CELL_W / img.width, CELL_H / img.height);
     const dw = img.width * scale;
     const dh = img.height * scale;
 
@@ -63,7 +67,18 @@ export function buildAtlas(files = IMAGE_FILES, onProgress) {
     ctx.beginPath();
     ctx.rect(x, y, CELL_W, CELL_H); // clip, or an oversized image bleeds
     ctx.clip();
+    ctx.fillStyle = "#e8dfd3";
+    ctx.fillRect(x, y, CELL_W, CELL_H);
     ctx.drawImage(img, x + (CELL_W - dw) / 2, y + (CELL_H - dh) / 2, dw, dh);
+    const badge = PROJECTS[i]?.external?.platform || (PROJECTS[i]?.featured ? "FEATURED FILM" : "");
+    if (badge) {
+      ctx.font = "500 16px sans-serif";
+      const width = ctx.measureText(badge).width + 24;
+      ctx.fillStyle = "rgba(31, 29, 27, .82)";
+      ctx.fillRect(x + 15, y + 15, width, 34);
+      ctx.fillStyle = "#f3ede6";
+      ctx.fillText(badge, x + 27, y + 38);
+    }
     ctx.restore();
   };
 

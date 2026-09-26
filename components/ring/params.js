@@ -1,4 +1,4 @@
-import { PROJECTS } from "./projects";
+import { PROJECTS } from "./catalog";
 
 export const EASES = [
   "power2.out",
@@ -15,6 +15,21 @@ export const EASES = [
 ];
 
 export const WEIGHTS = { Light: 300, Regular: 400, Medium: 500, Semibold: 600 };
+
+// Garden coordinates belong to the source plate, not the cropped viewport.
+export function gardenParams() {
+  return {
+    plateWidth: 1672, plateHeight: 941, mobileAt: 768,
+    wheelX: 0.515, wheelY: 0.446, wheelPixels: 106,
+    lampX: 0.747, lampY: 0.286, cropX: 0.58, mobileCropX: 0.78,
+    mobileWheelX: 0.43, mobileWheelY: 0.49, mobileWheelFit: 0.185,
+    rpm: 2.2, yaw: -0.30, tilt: 0.04, dpr: 1.5, fps: 30,
+    transition: 1, exitTime: 0.9, dayExposure: 1.2, nightExposure: 1,
+    dayKey: 3.5, nightKey: 1.2, nightLamp: 38,
+    radius: 1.65, rimWidth: 0.23, depth: 0.64,
+    spokes: 8, buckets: 12, particles: 100,
+  };
+}
 
 /**
  * Every tunable in one place. A fresh object per mount so the dev panel cannot
@@ -36,29 +51,37 @@ export function defaultParams() {
     refWidth: 1512,
     refHeight: 870, // viewport, i.e. screen less menu bar and browser chrome
     fitHeight: 0, // 0 = width alone drives scale, 1 = whichever axis is tighter
-    minScale: 0.5, // a phone is not a small desktop; bracket the extremes
+    minScale: 0.58, // keep the card legible on 360px phones
     maxScale: 1.75,
 
     narrowAt: 1024, // inclusive
     narrowPlane: 1.25,
     narrowRadius: 1.3, // cards grow faster than the arc, or the gaps close up
     narrowText: 1.5, // type cannot shrink like a picture can and stay readable
-    narrowPosX: -2.5,
+    narrowPosX: 0,
     narrowEndScale: 4.22,
 
     tightAt: 640, // inclusive
-    tightRadius: 0.82, // multiplies narrowRadius
-    tightPosX: -3.5,
+    tightRadius: 1.3, // retain breathing room at phone widths
+    tightPosX: 0,
     tightSplit: 0.8, // the heading, competing with the ring for centre screen
     tightName: 1.5, // the name is the only label left, so it takes the billing
-    tightNameBottom: 16, // px
+    tightNameBottom: 176, // leave room for the description and action on phones
     tightNameRight: 16, // px
     tightMetaWidth: 70, // vw of box, and so of filter region, around it
 
     // -- geometry, all at the reference window ---------------------------
     planeSize: 90, // long edge in px; aspect locked at 1.5 : 1
     count: PROJECTS.length, // one plane per project, so the deal comes out even
-    ringRadius: 340,
+    ringRadius: 160, // nine cards need a tighter arc than the original eighteen
+    navWidth: 0.34, // fraction of viewport reserved for the half-arc
+    navFront: 0.17, // the settled card's centre, measured from the left edge
+    navCardFit: 0.9, // leave a little air between its edge and the divider
+    mobileAt: 768,
+    stagePadding: 42, // px within the right column
+    stageTime: 0.65, // seconds to crossfade settled content
+    navMetaTop: 14, // vh, above the arc
+    navMetaBottom: 13, // vh, below the arc
     seed: 0, // where plane 0 sits, degrees (0 = 3 o'clock)
     radial: true, // long edge points outward; off = long edge along the ring
     radius: 6, // corner
@@ -86,7 +109,8 @@ export function defaultParams() {
     spinTime: 2.6,
     spinEase: "power2.inOut",
     spinDelay: 0,
-    posX: -2, // fraction of half the viewport width
+    posX: 0, // fine offset in half-window widths from the left arc position
+    centreFront: false, // the settled plane faces 3 o'clock in the left column
     posY: 0,
     endScale: 4.46,
     moveTime: 2.2,
@@ -94,20 +118,31 @@ export function defaultParams() {
     moveDelay: 0.2,
 
     // -- scroll / drag / click, live once the entry finishes --------------
-    scrollSpeed: 0.0022, // rad/s of angular velocity per px of wheel delta
-    damping: 0.94, // velocity kept per 60fps frame
+    scrollSpeed: 0.0018, // wheel delta to target velocity, rad/s per px
+    wheelDecay: 0.94, // target velocity kept per 60fps frame after wheel input
+    damping: 0.965, // velocity kept per 60fps frame
     maxSpeed: 12, // rad/s, so one flick cannot run away
+    zoneDead: 0.12, // fraction of viewport height on either side of centre
+    zoneMaxSpeed: 1.4, // target angular velocity at the viewport edge
+    zoneChase: 0.16, // velocity's per-frame response to active input
+    zoneCurve: 1.3, // exponent after smoothstep, for slower movement near centre
+    zoneHint: 0.16, // maximum opacity of the directional guides
+    zoneInvert: false,
+    bgOpacity: 0.26, // image layer over the paper, before the text scrim
+    bgBlur: 38, // CSS px; reduced on small screens
+    bgTime: 1, // seconds for the two image layers to crossfade
+    bgVideoOpacity: 0.22, // moving preview under the text scrim
     dragSpeed: 1,
     snap: true, // settle with a plane facing front
-    snapTime: 0.8, // run-in, once the flick itself is spent
-    snapFrom: 1, // rad/s under which the ring commits to a slot
+    snapTime: 1.05, // run-in, once the flick itself is spent
+    snapFrom: 0.7, // rad/s under which the ring commits to a slot
     pickTime: 0.55, // click-to-centre: seconds for one slot, root-scaled
     pickEase: "power3.inOut",
 
     // -- the intro heading, in the scene ---------------------------------
-    text: "Works '26",
+    text: "JIN Studio",
     textSize: 41,
-    textFont: "PP Neue Montreal",
+    textFont: "Satoshi",
     textWeight: 400,
     textTracking: 0, // em
     textColor: "#0a0a0a",
@@ -184,7 +219,7 @@ export function defaultParams() {
 
     // -- the cursor tag, drawn in the same shader pass --------------------
     tagFrom: 1024, // viewport width it needs; below that there is no cursor
-    tagText: "View",
+    tagText: "Open",
     tagSize: 14,
     tagWeight: 500,
     tagArrow: 14, // px, the svg in /public
