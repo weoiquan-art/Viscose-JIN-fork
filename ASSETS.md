@@ -15,3 +15,9 @@
 | `#contact` | 用户提供的联络链接 | — | 自制文字 SVG | 邮件 / Instagram / TikTok / GitHub / 课程站直链 |
 
 待用户补充：Sera 服装三视图、过程对比、场景及档案文案、Facebook 帖子专用封面与更多原帖清单、Contact 最终内容。已有两部影片保留原文件，均为 720p 以内；没有新素材的类型不建空卡。缺失年份保留空白。`public/brand/raven.svg` 从用户现有站点仓库沿用。
+
+## 花园入口（2026-09-26）
+
+用户附件 `image(5).png`（日景）、`image(6).png`（夜景）作为图像来源。花园 clean plate 由内置图像编辑移除原水车并制作同构图夜景，交付 `public/garden/day.webp` 与 `night.webp`，保留原生 1672×941，不通过放大冒充 2x 细节。
+
+新增程序建模水车 `public/garden/waterwheel.glb`；轮子与固定支架分组，包含嵌入木纹材质。静态备用图由同模型渲染。建模源码、尺寸、导出方式和图像编辑提示见 `public/garden/README.md`。

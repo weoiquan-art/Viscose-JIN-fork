@@ -208,6 +208,14 @@ export default function Carousel() {
       uPage: { value: new THREE.Color("#f3ede6") },
     };
 
+    const syncTheme = () => {
+      const css = getComputedStyle(document.documentElement);
+      uniforms.uPage.value.set(css.getPropertyValue("--paper").trim());
+      uniforms.uColor.value.set(css.getPropertyValue("--ink").trim());
+    };
+    syncTheme();
+    window.addEventListener("jin-theme-change", syncTheme);
+
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1),
       new THREE.ShaderMaterial({
@@ -1578,6 +1586,7 @@ export default function Carousel() {
       window.removeEventListener("popstate", onHistory);
       window.removeEventListener("hashchange", onHistory);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("jin-theme-change", syncTheme);
       window.removeEventListener("blur", onWindowBlur);
       container.removeEventListener("wheel", onWheel);
       container.removeEventListener("pointerdown", onPointerDown);
@@ -1729,6 +1738,7 @@ export default function Carousel() {
               style={{ opacity: 0.2 }}
               onClick={() => navigateRef.current?.(i)}
               aria-label={`${String(i + 1).padStart(2, "0")} ${p.name}`}
+              aria-current={active === i ? "true" : undefined}
             >
               {p.name}
             </button>

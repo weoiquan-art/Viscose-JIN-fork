@@ -16,6 +16,21 @@ export const EASES = [
 
 export const WEIGHTS = { Light: 300, Regular: 400, Medium: 500, Semibold: 600 };
 
+// Garden coordinates belong to the source plate, not the cropped viewport.
+export function gardenParams() {
+  return {
+    plateWidth: 1672, plateHeight: 941, mobileAt: 768,
+    wheelX: 0.515, wheelY: 0.446, wheelPixels: 106,
+    lampX: 0.747, lampY: 0.286, cropX: 0.58, mobileCropX: 0.78,
+    mobileWheelX: 0.43, mobileWheelY: 0.49, mobileWheelFit: 0.185,
+    rpm: 2.2, yaw: -0.30, tilt: 0.04, dpr: 1.5, fps: 30,
+    transition: 1, exitTime: 0.9, dayExposure: 1.2, nightExposure: 1,
+    dayKey: 3.5, nightKey: 1.2, nightLamp: 38,
+    radius: 1.65, rimWidth: 0.23, depth: 0.64,
+    spokes: 8, buckets: 12, particles: 100,
+  };
+}
+
 /**
  * Every tunable in one place. A fresh object per mount so the dev panel cannot
  * leak edits from one mount into the next.
