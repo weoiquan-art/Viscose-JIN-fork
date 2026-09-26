@@ -16,9 +16,14 @@ import { createMeta } from "./ring/meta";
 import { createSplitText } from "./ring/splitText";
 import { createTag, TAG_W, TAG_H } from "./ring/tag";
 import { defaultParams } from "./ring/params";
-import { IMAGE_FILES, PROJECTS } from "./ring/projects";
+import { IMAGE_FILES, PROJECTS } from "./ring/catalog";
 import { backgroundForProject } from "./ring/background";
-import { ProjectDetails, ProjectFallback, ProjectLightbox } from "./ProjectUI";
+import {
+  ProjectStage,
+  ProjectFallback,
+  ProjectLightbox,
+  BackgroundPreview,
+} from "./ProjectUI";
 import {
   TAU,
   HALF_PI,
@@ -44,6 +49,7 @@ export default function Carousel() {
   const [active, setActive] = useState(-1);
   const [openProject, setOpenProject] = useState(-1);
   const [glReady, setGlReady] = useState(false);
+  const [previewAllowed, setPreviewAllowed] = useState(false);
   const navigateRef = useRef(null);
   const actionRef = useRef(null);
   const historyModeRef = useRef("replace");
@@ -54,7 +60,6 @@ export default function Carousel() {
   const loaderRef = useRef(null);
   const liveRef = useRef(null);
   const cutRef = useRef(null);
-  const backdropRef = useRef(null);
   const backdropLayersRef = useRef([]);
   const zoneHintsRef = useRef(null);
   // Per side: the box that positions the lockup, the filtered wrapper the goo
@@ -79,13 +84,17 @@ export default function Carousel() {
     ).matches;
     if (reducedMotion) params.hover = false;
     const styleBackdrop = () => {
-      const el = backdropRef.current;
-      if (!el) return;
+      const el = document.documentElement;
       el.style.setProperty("--bg-opacity", params.bgOpacity);
       el.style.setProperty("--bg-blur", `${params.bgBlur}px`);
       el.style.setProperty("--bg-time", `${params.bgTime}s`);
+      el.style.setProperty("--bg-video-opacity", params.bgVideoOpacity);
       el.style.setProperty("--zone-dead", `${params.zoneDead * 100}vh`);
       el.style.setProperty("--zone-hint-opacity", params.zoneHint);
+      el.style.setProperty("--nav-width", `${params.navWidth * 100}%`);
+      el.style.setProperty("--stage-padding", `${params.stagePadding}px`);
+      el.style.setProperty("--stage-time", `${params.stageTime}s`);
+      el.classList.toggle("jin-mobile", window.innerWidth < params.mobileAt);
     };
     styleBackdrop();
     let foreground = 0;
@@ -291,6 +300,13 @@ export default function Carousel() {
       const tight = viewW <= params.tightAt;
       narrowNow = narrow;
       tightNow = tight;
+      styleBackdrop();
+      setPreviewAllowed(
+        !reducedMotion &&
+          viewW >= params.mobileAt &&
+          document.visibilityState === "visible" &&
+          window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+      );
       planeK = narrow ? params.narrowPlane : 1;
       // The bands stack: tight sits inside narrow and pulls the arc back in
       // from where narrow had pushed it out to.
@@ -339,6 +355,7 @@ export default function Carousel() {
 
     resize();
     window.addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", onResize);
 
     /* ------------------------------------------------------- spin & input */
     const ringCentre = { x: 0, y: 0 };
@@ -427,7 +444,13 @@ export default function Carousel() {
 
     const planeForProject = (projectIndex) => {
       for (let i = 0; i < PROJECTS.length; i++) {
-        if (((params.imageOffset - signedOffset(i)) % PROJECTS.length + PROJECTS.length) % PROJECTS.length === projectIndex) return i;
+        if (
+          (((params.imageOffset - signedOffset(i)) % PROJECTS.length) +
+            PROJECTS.length) %
+            PROJECTS.length ===
+          projectIndex
+        )
+          return i;
       }
       return 0;
     };
@@ -447,11 +470,15 @@ export default function Carousel() {
         interactive = true;
         layout(0);
       }
-      pick(planeForProject(index), instant);
+      pick(
+        planeForProject(index),
+        instant || viewW < params.mobileAt || reducedMotion,
+      );
     };
     navigateRef.current = selectProject;
 
-    const readHash = () => PROJECTS.findIndex((p) => `#${p.slug}` === window.location.hash);
+    const readHash = () =>
+      PROJECTS.findIndex((p) => `#${p.slug}` === window.location.hash);
     const onHistory = () => {
       const index = readHash();
       if (index >= 0) selectProject(index, true);
@@ -460,11 +487,20 @@ export default function Carousel() {
     window.addEventListener("hashchange", onHistory);
 
     const onKeyDown = (event) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || openDialog()) return;
-      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+      if (event.altKey || event.ctrlKey || event.metaKey || openDialog())
+        return;
+      if (
+        ["INPUT", "TEXTAREA", "SELECT", "VIDEO"].includes(
+          document.activeElement?.tagName,
+        )
+      )
+        return;
       let index = -1;
-      if (event.key === "ArrowRight" || event.key === "ArrowDown") index = ((shown < 0 ? 0 : shown) + 1) % PROJECTS.length;
-      if (event.key === "ArrowLeft" || event.key === "ArrowUp") index = ((shown < 0 ? 0 : shown) - 1 + PROJECTS.length) % PROJECTS.length;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown")
+        index = ((shown < 0 ? 0 : shown) + 1) % PROJECTS.length;
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp")
+        index =
+          ((shown < 0 ? 0 : shown) - 1 + PROJECTS.length) % PROJECTS.length;
       if (event.key === "Home") index = 0;
       if (event.key === "End") index = PROJECTS.length - 1;
       if (/^[1-9]$/.test(event.key)) index = Number(event.key) - 1;
@@ -472,7 +508,8 @@ export default function Carousel() {
       event.preventDefault();
       selectProject(index);
     };
-    const openDialog = () => document.querySelector('[role="dialog"][aria-modal="true"]');
+    const openDialog = () =>
+      document.querySelector('[role="dialog"][aria-modal="true"]');
     window.addEventListener("keydown", onKeyDown);
 
     /* ------------------------------------------------------------ pointer */
@@ -536,20 +573,15 @@ export default function Carousel() {
 
     const updateZone = () => {
       zoneTarget = 0;
-      const hoveredProject =
-        over >= 0
-          ? (((params.imageOffset - signedOffset(over)) % PROJECTS.length) +
-              PROJECTS.length) %
-            PROJECTS.length
-          : -1;
       if (
         interactive &&
         !dragging &&
         !picking &&
         !reducedMotion &&
+        viewW >= params.mobileAt &&
         pointer.inside &&
         pointer.type === "mouse" &&
-        hoveredProject !== shown &&
+        pointer.x + viewW * 0.5 < viewW * params.navWidth &&
         !openDialog()
       ) {
         const distance = Math.abs(pointer.y) / Math.max(1, viewH);
@@ -647,9 +679,22 @@ export default function Carousel() {
     // only ever lands on the card the tag was offering.
     const onClick = () => {
       if (!interactive || pointerTravel >= 5 || over < 0) return;
-      const index = ((params.imageOffset - signedOffset(over)) % PROJECTS.length + PROJECTS.length) % PROJECTS.length;
-      if (!pick(over) && shown === index && !PROJECTS[index].pending && PROJECTS[index].slug !== "contact") {
-        if (PROJECTS[index].external?.url) window.open(PROJECTS[index].external.url, "_blank", "noopener,noreferrer");
+      const index =
+        (((params.imageOffset - signedOffset(over)) % PROJECTS.length) +
+          PROJECTS.length) %
+        PROJECTS.length;
+      if (
+        !pick(over) &&
+        shown === index &&
+        !PROJECTS[index].pending &&
+        PROJECTS[index].slug !== "contact"
+      ) {
+        if (PROJECTS[index].external?.url)
+          window.open(
+            PROJECTS[index].external.url,
+            "_blank",
+            "noopener,noreferrer",
+          );
         else setOpenProject(index);
       }
     };
@@ -666,7 +711,11 @@ export default function Carousel() {
       // Held off until the entry finishes, so the cursor cannot soften the
       // ring while the timeline is still drawing it.
       const live =
-        params.hover && engaged() && pointer.seeded && interactive && !zoneDriving;
+        params.hover &&
+        engaged() &&
+        pointer.seeded &&
+        interactive &&
+        !zoneDriving;
       cursor.amt += ((live ? 1 : 0) - cursor.amt) * chase(dt, 0.12);
 
       const k = chase(dt, params.lag);
@@ -790,7 +839,7 @@ export default function Carousel() {
       const R = params.ringRadius * radiusK * g;
       const cx = params.centreFront
         ? -R * shift
-        : posX * viewW * 0.5 * shift;
+        : ((params.navFront - 0.5) * viewW - R + posX * viewW * 0.5) * shift;
       const cy = params.posY * viewH * 0.5 * shift;
 
       // Screen-space centre, for pointer maths. World Y is up, page Y is down.
@@ -799,11 +848,18 @@ export default function Carousel() {
       // A plane faces front when the ring centre, that plane and the middle of
       // the screen line up. Before the stage move there is no front, so 3
       // o'clock stands in.
-      frontAngle = cx !== 0 || cy !== 0 ? Math.atan2(-cy, -cx) : 0;
+      frontAngle =
+        params.centreFront && (cx !== 0 || cy !== 0) ? Math.atan2(-cy, -cx) : 0;
 
       // Anything measured in plane long edges — hover reach, thread reach,
       // side falloff — comes off W, so the narrow bump reaches them for free.
-      const W = params.planeSize * planeK * g;
+      const W = Math.min(
+        params.planeSize * planeK * g,
+        2 *
+          viewW *
+          Math.max(0.02, params.navWidth - params.navFront) *
+          params.navCardFit,
+      );
       const H = W / 1.5;
       uniforms.uSize.value.set(W, H);
       // Tracks the plane, not the window: a card 25% bigger with the same
@@ -1299,15 +1355,18 @@ export default function Carousel() {
     // restarts the whole entry. On a warm cache fonts resolve in milliseconds
     // and that was invisible; on a cold one they arrive late and it reads as
     // the page going blank and starting over.
+    let entryStarted = false;
     const startEntry = () => {
-      if (disposed || tl) return;
+      if (disposed || entryStarted) return;
+      entryStarted = true;
+      clearTimeout(fontFallback);
       splitText.build();
       tag.build();
       styleMeta();
       const initial = readHash();
       if (entrySkipped) {
         for (const fade of splitText.fades) fade.value = 0;
-      } else if (reducedMotion || initial >= 0) {
+      } else if (reducedMotion || viewW < params.mobileAt || initial >= 0) {
         state.progress = state.launch = state.spread = state.shift = 1;
         state.spin = params.spinTurns * TAU;
         for (const fade of splitText.fades) fade.value = 0;
@@ -1374,7 +1433,8 @@ export default function Carousel() {
     renderer.setAnimationLoop(() => {
       const now = performance.now();
       // Reduced motion freezes the shader's clock and repaints only as needed.
-      if (reducedMotion && now - lastRender < 80) return;
+      if ((reducedMotion || viewW < params.mobileAt) && now - lastRender < 80)
+        return;
       lastRender = now;
       // Clamped, so a backgrounded tab does not resume with one huge step.
       const dt = Math.min(0.05, (now - prevT) / 1000);
@@ -1484,7 +1544,10 @@ export default function Carousel() {
         showBackdrop(shown);
         const hash = `#${PROJECTS[shown].slug}`;
         if (location.hash !== hash) {
-          if (historyModeRef.current === "none" || historyModeRef.current === "replace") {
+          if (
+            historyModeRef.current === "none" ||
+            historyModeRef.current === "replace"
+          ) {
             history.replaceState(null, "", hash);
           } else {
             history.pushState(null, "", hash);
@@ -1493,7 +1556,9 @@ export default function Carousel() {
         historyModeRef.current = "push";
       }
 
-      renderer.render(scene, camera);
+      // The mobile navigation is DOM-only; keep selection state ticking, but
+      // do not spend GPU time painting a canvas the layout has hidden.
+      if (viewW >= params.mobileAt) renderer.render(scene, camera);
       if (!shaderFailed && !disposed && !displayed) {
         displayed = true;
         setGlReady(true);
@@ -1509,6 +1574,7 @@ export default function Carousel() {
       renderer.setAnimationLoop(null);
 
       window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onResize);
       window.removeEventListener("popstate", onHistory);
       window.removeEventListener("hashchange", onHistory);
       window.removeEventListener("keydown", onKeyDown);
@@ -1542,9 +1608,25 @@ export default function Carousel() {
       // is reached the renderer above cannot be constructed at all.
       renderer.dispose();
       renderer.forceContextLoss();
-      renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
+      renderer.domElement.removeEventListener(
+        "webglcontextlost",
+        onContextLost,
+      );
       renderer.domElement.remove();
       navigateRef.current = null;
+      document.documentElement.classList.remove("jin-mobile");
+      for (const name of [
+        "--bg-opacity",
+        "--bg-blur",
+        "--bg-time",
+        "--bg-video-opacity",
+        "--zone-dead",
+        "--zone-hint-opacity",
+        "--nav-width",
+        "--stage-padding",
+        "--stage-time",
+      ])
+        document.documentElement.style.removeProperty(name);
     };
   }, []);
 
@@ -1554,38 +1636,74 @@ export default function Carousel() {
           pointermove stream dies mid-drag. Nothing here scrolls — the swipe
           is the carousel. */}
       <ProjectFallback hidden={glReady} />
-      <div ref={backdropRef} className="project-backdrop" aria-hidden="true">
+      <div className="project-backdrop" aria-hidden="true">
         {[0, 1].map((i) => (
           <div
             key={i}
-            ref={(el) => { backdropLayersRef.current[i] = el; }}
+            ref={(el) => {
+              backdropLayersRef.current[i] = el;
+            }}
             className="backdrop-media"
           />
         ))}
+        <BackgroundPreview
+          project={PROJECTS[active]}
+          enabled={previewAllowed && glReady}
+        />
         <div className="backdrop-scrim" />
         <div ref={zoneHintsRef} className="zone-hints" data-zone="idle">
-          <div className="zone-guide zone-guide-top"><span>↑</span></div>
-          <div className="zone-guide zone-guide-bottom"><span>↓</span></div>
+          <div className="zone-guide zone-guide-top">
+            <span>↑</span>
+          </div>
+          <div className="zone-guide zone-guide-bottom">
+            <span>↓</span>
+          </div>
         </div>
       </div>
       <div
         ref={containerRef}
         aria-hidden="true"
-        className="fixed inset-0 z-[1] touch-none"
+        className="ring-canvas fixed inset-0 z-[1] touch-none"
         style={{ visibility: glReady ? "visible" : "hidden" }}
       />
-      {glReady && <>
-        <header className="brand-mark">
-          <button type="button" aria-label="回到第一张卡" onClick={() => navigateRef.current?.(0)}><img src="/brand/raven.svg" alt="" /> <span>JIN Studio</span></button>
-        </header>
-        <label className="mobile-index">作品
-          <select aria-label="选择作品" value={active < 0 ? 0 : active} onChange={(e) => navigateRef.current?.(Number(e.target.value))}>
-            {PROJECTS.map((p, i) => <option key={p.slug} value={i}>{String(i + 1).padStart(2, "0")} · {p.name}</option>)}
-          </select>
-        </label>
-        <ProjectDetails project={PROJECTS[active]} index={active} actionRef={actionRef} onOpen={() => setOpenProject(active)} />
-        <ProjectLightbox project={PROJECTS[openProject]} onClose={closeProject} returnFocusRef={actionRef} />
-      </>}
+      {glReady && (
+        <>
+          <header className="brand-mark">
+            <button
+              type="button"
+              aria-label="回到第一张卡"
+              onClick={() => navigateRef.current?.(0)}
+            >
+              <img src="/brand/raven.svg" alt="" /> <span>JIN Studio</span>
+            </button>
+          </header>
+          <label className="mobile-index">
+            作品
+            <select
+              aria-label="选择作品"
+              value={active < 0 ? 0 : active}
+              onChange={(e) => navigateRef.current?.(Number(e.target.value))}
+            >
+              {PROJECTS.map((p, i) => (
+                <option key={p.slug} value={i}>
+                  {String(i + 1).padStart(2, "0")} · {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <ProjectStage
+            project={PROJECTS[active]}
+            index={active}
+            actionRef={actionRef}
+            onOpen={() => setOpenProject(active)}
+          />
+          <ProjectLightbox
+            project={PROJECTS[openProject]}
+            onClose={closeProject}
+            returnFocusRef={actionRef}
+          />
+        </>
+      )}
 
       {/* Never takes the pointer: the canvas underneath handles the wheel and
           the drag, and the column has no business interrupting a throw that
@@ -1595,16 +1713,25 @@ export default function Carousel() {
         ref={listRef}
         aria-label="Projects"
         style={{
-          fontFamily: '"Satoshi", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif',
+          fontFamily:
+            '"Satoshi", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif',
           visibility: glReady ? "visible" : "hidden",
         }}
         className="index-list fixed right-[5vw] top-[2.4vh] z-10 flex flex-col items-start text-right leading-[1.4] tracking-[0.01em] text-[#0a0a0a] opacity-0"
       >
         {PROJECTS.map((p, i) => (
-          <li
-            key={p.slug}
-          >
-            <button type="button" ref={(el) => { itemsRef.current[i] = el; }} style={{ opacity: 0.2 }} onClick={() => navigateRef.current?.(i)} aria-label={`${String(i + 1).padStart(2, "0")} ${p.name}`}>{p.name}</button>
+          <li key={p.slug}>
+            <button
+              type="button"
+              ref={(el) => {
+                itemsRef.current[i] = el;
+              }}
+              style={{ opacity: 0.2 }}
+              onClick={() => navigateRef.current?.(i)}
+              aria-label={`${String(i + 1).padStart(2, "0")} ${p.name}`}
+            >
+              {p.name}
+            </button>
           </li>
         ))}
       </ul>
@@ -1636,7 +1763,7 @@ export default function Carousel() {
             }}
             aria-hidden="true"
             style={{ visibility: glReady ? "visible" : "hidden" }}
-            className="pointer-events-none fixed top-1/2 z-10 -translate-y-1/2 tracking-[-0.01em] text-[#0a0a0a]"
+            className={`meta-side meta-${side} pointer-events-none fixed top-1/2 z-10 -translate-y-1/2 tracking-[-0.01em] text-[#0a0a0a]`}
           >
             <span
               ref={(el) => {

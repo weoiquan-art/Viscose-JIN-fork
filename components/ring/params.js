@@ -1,4 +1,4 @@
-import { PROJECTS } from "./projects";
+import { PROJECTS } from "./catalog";
 
 export const EASES = [
   "power2.out",
@@ -43,12 +43,12 @@ export function defaultParams() {
     narrowPlane: 1.25,
     narrowRadius: 1.3, // cards grow faster than the arc, or the gaps close up
     narrowText: 1.5, // type cannot shrink like a picture can and stay readable
-    narrowPosX: -2.5,
+    narrowPosX: 0,
     narrowEndScale: 4.22,
 
     tightAt: 640, // inclusive
     tightRadius: 1.3, // retain breathing room at phone widths
-    tightPosX: -3.5,
+    tightPosX: 0,
     tightSplit: 0.8, // the heading, competing with the ring for centre screen
     tightName: 1.5, // the name is the only label left, so it takes the billing
     tightNameBottom: 176, // leave room for the description and action on phones
@@ -59,6 +59,14 @@ export function defaultParams() {
     planeSize: 90, // long edge in px; aspect locked at 1.5 : 1
     count: PROJECTS.length, // one plane per project, so the deal comes out even
     ringRadius: 160, // nine cards need a tighter arc than the original eighteen
+    navWidth: 0.34, // fraction of viewport reserved for the half-arc
+    navFront: 0.17, // the settled card's centre, measured from the left edge
+    navCardFit: 0.9, // leave a little air between its edge and the divider
+    mobileAt: 768,
+    stagePadding: 42, // px within the right column
+    stageTime: 0.65, // seconds to crossfade settled content
+    navMetaTop: 14, // vh, above the arc
+    navMetaBottom: 13, // vh, below the arc
     seed: 0, // where plane 0 sits, degrees (0 = 3 o'clock)
     radial: true, // long edge points outward; off = long edge along the ring
     radius: 6, // corner
@@ -86,8 +94,8 @@ export function defaultParams() {
     spinTime: 2.6,
     spinEase: "power2.inOut",
     spinDelay: 0,
-    posX: -2, // fraction of half the viewport width
-    centreFront: true, // front plane stays centred as the ring radius changes
+    posX: 0, // fine offset in half-window widths from the left arc position
+    centreFront: false, // the settled plane faces 3 o'clock in the left column
     posY: 0,
     endScale: 4.46,
     moveTime: 2.2,
@@ -108,6 +116,7 @@ export function defaultParams() {
     bgOpacity: 0.26, // image layer over the paper, before the text scrim
     bgBlur: 38, // CSS px; reduced on small screens
     bgTime: 1, // seconds for the two image layers to crossfade
+    bgVideoOpacity: 0.22, // moving preview under the text scrim
     dragSpeed: 1,
     snap: true, // settle with a plane facing front
     snapTime: 1.05, // run-in, once the flick itself is spent

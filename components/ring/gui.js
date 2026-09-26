@@ -13,7 +13,12 @@ import { TAU } from "./utils";
  */
 export function mountGui(GUI, { params, state, info, actions }) {
   const {
-    replay, refit, styleMeta, styleBackdrop, setThreshold, rebuildText,
+    replay,
+    refit,
+    styleMeta,
+    styleBackdrop,
+    setThreshold,
+    rebuildText,
     rebuildTag,
   } = actions;
 
@@ -82,6 +87,38 @@ export function mountGui(GUI, { params, state, info, actions }) {
   shape.add(params, "planeSize", 10, 900, 1).name("plane size");
   shape.add(params, "count", 2, MAX_PLANES, 1);
   shape.add(params, "ringRadius", 20, 2400, 1).name("ring radius");
+  shape
+    .add(params, "navWidth", 0.25, 0.48, 0.005)
+    .name("left column")
+    .onChange(() => {
+      styleBackdrop();
+      styleMeta();
+    });
+  shape.add(params, "navFront", 0.08, 0.3, 0.005).name("front position");
+  shape.add(params, "navCardFit", 0.5, 1, 0.01).name("card inside column");
+  shape
+    .add(params, "mobileAt", 600, 1000, 1)
+    .name("mobile below (px)")
+    .onChange(() => {
+      refit();
+      styleMeta();
+    });
+  shape
+    .add(params, "stagePadding", 12, 100, 1)
+    .name("stage padding")
+    .onChange(styleBackdrop);
+  shape
+    .add(params, "stageTime", 0.1, 1.5, 0.05)
+    .name("stage fade (s)")
+    .onChange(styleBackdrop);
+  shape
+    .add(params, "navMetaTop", 0, 35, 1)
+    .name("nav name top (vh)")
+    .onChange(styleMeta);
+  shape
+    .add(params, "navMetaBottom", 0, 35, 1)
+    .name("nav type bottom (vh)")
+    .onChange(styleMeta);
   shape.add(params, "seed", -180, 180, 1).name("seed angle");
   shape.add(params, "radial");
   shape.add(params, "radius", 0, 300, 0.5).name("corner");
@@ -192,13 +229,17 @@ export function mountGui(GUI, { params, state, info, actions }) {
   scroll.add(params, "wheelDecay", 0.5, 0.999, 0.001);
   scroll.add(params, "damping", 0.5, 0.999, 0.001);
   scroll.add(params, "maxSpeed", 0.5, 60, 0.5);
-  scroll.add(params, "zoneDead", 0, 0.45, 0.005)
-    .name("centre dead zone").onChange(styleBackdrop);
+  scroll
+    .add(params, "zoneDead", 0, 0.45, 0.005)
+    .name("centre dead zone")
+    .onChange(styleBackdrop);
   scroll.add(params, "zoneMaxSpeed", 0, 12, 0.05).name("edge target speed");
   scroll.add(params, "zoneChase", 0.01, 1, 0.005).name("input chase");
   scroll.add(params, "zoneCurve", 0.3, 4, 0.05).name("zone curve");
-  scroll.add(params, "zoneHint", 0, 0.5, 0.01)
-    .name("hint opacity").onChange(styleBackdrop);
+  scroll
+    .add(params, "zoneHint", 0, 0.5, 0.01)
+    .name("hint opacity")
+    .onChange(styleBackdrop);
   scroll.add(params, "zoneInvert").name("reverse zones");
   scroll.add(params, "dragSpeed", 0, 5, 0.01);
   scroll.add(params, "snap");
@@ -211,6 +252,9 @@ export function mountGui(GUI, { params, state, info, actions }) {
   background.add(params, "bgOpacity", 0, 0.5, 0.01).onChange(styleBackdrop);
   background.add(params, "bgBlur", 0, 80, 1).onChange(styleBackdrop);
   background.add(params, "bgTime", 0.1, 2, 0.05).onChange(styleBackdrop);
+  background
+    .add(params, "bgVideoOpacity", 0, 0.4, 0.01)
+    .onChange(styleBackdrop);
 
   const pointer = gui.addFolder("pointer");
   pointer.add(params, "hover").name("enabled");
