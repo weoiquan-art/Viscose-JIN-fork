@@ -2,6 +2,13 @@
 
 > Dated verification evidence for specific commits, not a current feature list. Begin with [CURRENT_STATE.md](CURRENT_STATE.md); older rows can contain now-replaced counts, layouts, or unresolved items. A successful Next.js build alone does not verify browser GLSL or device performance.
 
+## 2026-09-27 · 手机半弧 · `3f4d019`
+
+- `npm run lint`、`npm run build`、`git diff --check` 通过；未修改 GLSL 源码。
+- 360×780、390×844、640×800、767×420、700×360 的组合检查：当前卡完整落在左栏，邻卡有可见面积，右侧媒体可用宽度至少 221px；1440×900 的桌面比例/半径路径不变。此为计算检查，不是截图验收。
+- 现有测试浏览器禁用 WebGL；新手机布局的实际 GPU 渲染、滑动手感、影片操作和低端手机性能尚未实测，不继承旧移动端单列的通过记录。
+- JIN 提供的本轮第一张截图确认此前溪岸网格在其手机上渲染；可见偏浅的 3D 水带和底板水面接缝，需要后续修整。
+
 ## 2026-09-27 · 溪岸第一阶段 · `c90e15c`
 
 - `npm run lint`、`npm run build`、`git diff --check` 通过。环境几何检查：7 个网格批次、2,920 个实例，更新波浪后位置均为有限数值。

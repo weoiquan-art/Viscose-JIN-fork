@@ -2,6 +2,12 @@
 
 > Historical sequence only. For the inspected branch's present implementation and one active next task, read [CURRENT_STATE.md](CURRENT_STATE.md).
 
+## 2026-09-27 · 手机保留半弧与作品舞台
+
+- 根据 JIN 手机截图与要求，取消移动端隐藏/跳过绘制轮盘；改为左侧 32% 半弧、右侧 68% 作品内容，专用半径保证邻卡可见。触控拖动、吸卡、选择框和新增前后按钮共用现有选卡逻辑。
+- 限制手机 DPR/帧率并使用 GPU scissor，只绘制轮盘区域；保留点击播放、影院模式和无 WebGL 目录。桌面布局不变。
+- 手机截图也确认了溪岸已渲染，但新旧溪水接缝明显；保留为后续 Garden 修整项。
+
 ## 2026-09-27 · Garden 首段溪岸建模（预览）
 
 - `environment.js` 新增溪床、两岸坡面、岸石、实例化草叶、基础墩与动态水面；与现有水车共用倾斜世界、昼夜灯光与暂停时钟。水面为程序波纹，不是流体模拟。

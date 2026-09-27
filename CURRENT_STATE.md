@@ -1,6 +1,6 @@
 # JIN Studio · Current State
 
-Last code verification: 2026-09-27, branch `codex/jin-studio-viscose`, source HEAD `c90e15c040243b6748bc780621b76457acd85319`. PR [#1](https://github.com/weoiquan-art/Viscose-JIN-fork/pull/1) is an open, unmerged draft against `main`. That code commit's [Cloudflare Pages preview](https://6a130d64.viscose-jin-fork.pages.dev/) succeeded; a separate Workers build failed because that Worker does not exist. Check the *new* commit's Pages result after any push. This snapshot describes the inspected code, not a promise that later commits or the live production site match it.
+Last code verification: 2026-09-27, branch `codex/jin-studio-viscose`, source HEAD `3f4d019ac24c6587dc84f820d967af44cee8fe29`. PR [#1](https://github.com/weoiquan-art/Viscose-JIN-fork/pull/1) is an open, unmerged draft against `main`. The mobile half-arc code passes local build/lint/layout checks; check the exact commit's Cloudflare Pages result after any push. The earlier creek preview was deployed successfully. A separate Workers build fails because that Worker does not exist. This snapshot is source evidence, not production acceptance.
 
 ## Current architecture
 
@@ -13,6 +13,7 @@ Last code verification: 2026-09-27, branch `codex/jin-studio-viscose`, source HE
 
 - Garden wheel/button enters the portfolio; the lamp and site control switch persisted day/night theme. Wheel pause, reduced-motion behavior, WebGL poster fallback, mobile framing, direct project hash entry, return to garden, and browser back/forward are implemented.
 - Gallery has left half-arc navigation with top/bottom mouse regions, a central idle region, wheel/drag/index/keyboard input, settled card backdrops, two local films, native player/lightbox, hash deep links/history, mobile selection, reduced-motion behavior, and no-JavaScript/WebGL catalog fallback.
+- Below 768px, the gallery now renders a 32% left half-arc and 68% content stage, with touch drag, previous/next buttons and a select menu. `components/ring/viewport.js` shares composition metrics with CSS and canvas; mobile DPR is capped at 1.25 and rendering at 30fps, with GPU scissoring to the left column. Desktop geometry is preserved. Phone gesture/visual review of this new layout is still pending.
 - Eight navigable entries: four character images, two local films, one external Facebook post, and Contact. The Sera costume sheet remains a pending record and is filtered out of navigation.
 
 ## Current garden implementation
@@ -28,13 +29,13 @@ Last code verification: 2026-09-27, branch `codex/jin-studio-viscose`, source HE
 ## Known limitations
 
 - The surroundings outside the local creek reach remain image plates. Full 3D Garden is not complete.
-- **The new creek geometry is not visually verified in WebGL yet.** Build/lint and geometry checks passed, but the available browser reports `GL_RENDERER = Disabled` and renders the static fallback. Creek/plate alignment, mobile framing, shading, motion and real-device performance need a WebGL-capable review. Do not treat a deployment success or fallback screenshot as 3D acceptance.
+- **JIN supplied a phone screenshot showing the new creek geometry rendered (2026-09-27).** It confirms device rendering, but the pale modeled water/banks form a visible strip over the photographic creek; the boundary/material match is not accepted. The agent browser reports `GL_RENDERER = Disabled` and renders the static fallback. Day/night consistency, motion and real-device performance still need review. Do not treat a deployment success or fallback screenshot as 3D acceptance.
 - The old static poster/GLB contain only the wheel; no environment GLB was exported. The Pages preview is not a production release.
 - Costume sheet and dedicated Facebook cover await supplied assets; the pending sheet is not an empty card.
 
 ## Active direction and one next task
 
-**Next task: visually validate the first modeled creek reach in a WebGL-capable browser (desktop and phone), then correct its plate boundary before extending terrain.** Inspect `GardenWheel.jsx` → `environment.js` → `gardenParams()`; check wheel footing/creek contact, transparent edges, day/night, pause/reduced-motion and resize. After this gate, continue the approved full 3D migration into meadow/flowers, trees and lamp/raven. Preserve entry and portfolio behavior.
+**Next task: review the new phone half-arc on device**, especially swipe/settle, adjacent-card visibility, films, contact links and rotation between portrait/landscape. First files: `Carousel.jsx` → `ring/viewport.js` → `globals.css`. Then resume the approved full 3D Garden migration by correcting the visible creek/plate boundary before extending meadow/flowers, trees and lamp/raven. The phone layout request changes the current priority; the Garden direction remains active.
 
 ## Already done; do not recreate
 
