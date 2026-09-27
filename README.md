@@ -1,6 +1,6 @@
 # JIN Studio · 轮盘作品站
 
-基于 [Yousuf-developer/Viscose-carousel](https://github.com/Yousuf-developer/Viscose-carousel) 的 MIT 许可 Fork。保留原作的 Three.js SDF 黏液与细丝 shader、图集、GSAP 入场和滚动惯性；作品、字体、导航和详情为 JIN Studio 改造。原作的技术说明保留在 [BREAKDOWN.md](BREAKDOWN.md)，版权声明见 [LICENSE](LICENSE)。
+基于 [Yousuf-developer/Viscose-carousel](https://github.com/Yousuf-developer/Viscose-carousel) 的 MIT 许可 Fork。花园入口和半弧作品站的当前状态见 [CURRENT_STATE.md](CURRENT_STATE.md)。保留原作的 Three.js SDF 黏液与细丝 shader、图集、GSAP 入场和滚动惯性；原作设计说明留在 [BREAKDOWN.md](BREAKDOWN.md)，版权声明见 [LICENSE](LICENSE)。
 
 ## 本地运行
 
@@ -28,10 +28,10 @@ npm run build
 
 ## 文档
 
-- [PRODUCT.md](PRODUCT.md)：产品范围、媒体与发布门槛
-- [DESIGN.md](DESIGN.md)：视觉、布局和交互规则
-- [ASSETS.md](ASSETS.md)：素材来源与缺项
-- [QA.md](QA.md)：已执行检查和仍需浏览器验证的项目
-- [CHANGELOG.md](CHANGELOG.md)：本次改造记录
+- [AGENTS.md](AGENTS.md) → [CURRENT_STATE.md](CURRENT_STATE.md)：Agent 入口与唯一当前快照
+- [PRODUCT.md](PRODUCT.md)：产品意图；[DESIGN.md](DESIGN.md)：视觉和交互规则
+- [ASSETS.md](ASSETS.md)：素材来源与缺项；[DEPLOY.md](DEPLOY.md)：预览与发布流程
+- [QA.md](QA.md)：按日期的验证记录；[CHANGELOG.md](CHANGELOG.md)：历史变更
+- [docs/upstream-viscose-internals.md](docs/upstream-viscose-internals.md) 与 [BREAKDOWN.md](BREAKDOWN.md)：仅在底层环或 shader 工作中参考的上游资料
 
 Satoshi 与 Geist 已转为 WOFF2；中文使用 OFL 许可的 Noto Sans SC。原版商业字体和第三方示例卡图未随站点发布。原版 `docs/` 截图仅为上游技术文档的演示，不代表 JIN Studio 的作品。

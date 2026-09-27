@@ -1,5 +1,12 @@
 # 变更记录
 
+> Historical sequence only. For the inspected branch's present implementation and one active next task, read [CURRENT_STATE.md](CURRENT_STATE.md).
+
+## 2026-09-27 · Agent 接管入口整理
+
+- `AGENTS.md` 收敛为任务路由；新增 `CURRENT_STATE.md`，按实际代码区分花园图片底板、运行时 Three.js 水车与下一阶段完整 3D 环境目标。
+- 旧 Agent 引擎笔记原文移至 `docs/upstream-viscose-internals.md`，`BREAKDOWN.md` 明确为上游历史；产品、设计、素材、QA 与部署文档各保留自己的职责。此次不修改运行时代码或视觉。
+
 ## 2026-09-26 · 左半弧与内容舞台（预览分支）
 
 - WebGL 圆心移到视口左外，停稳卡位于占屏 34% 的左栏；画布裁在分隔线之前。环的 shader、黏液、细丝和玻璃逻辑保持原样。原有双侧 meta 改放在左栏上下，索引仍在右上。

@@ -1,8 +1,8 @@
-# Deployment
+# Deployment procedure
 
-- Host: existing Cloudflare Pages project `viscose-jin-fork`.
+This file is the release procedure, not a live status feed. Current branch, PR, verified commit, and its preview are in [CURRENT_STATE.md](CURRENT_STATE.md).
+
+- Host: Cloudflare Pages project `viscose-jin-fork`.
 - Build: `npm run build`; output: `out/` (Next.js static export).
-- Work branch: `codex/jin-studio-viscose`; draft PR #1.
-- Garden uses local WebP plates, procedural Three.js geometry and theme state in localStorage. No API key, runtime service, or new dependency is required.
-- Push the reviewed source and assets to the preview branch, verify the exact commit's Cloudflare check and preview URL, and only then report it as deployed.
-- Production merge/release remains subject to JIN's preview review. Do not change the production branch automatically.
+- Push reviewed source and assets to the existing preview branch. Verify the exact new commit's **Cloudflare Pages** check and preview URL before reporting a successful deployment. An independent Workers Builds check can fail because its Worker does not exist; do not mistake it for the Pages result.
+- Keep the PR as preview until JIN reviews it. Do not merge to `main` or switch production based on a successful preview alone.

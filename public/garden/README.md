@@ -1,6 +1,6 @@
 # JIN Studio · Garden waterwheel
 
-Preview model created 2026-09-26 from JIN's supplied garden concept. This is a genuine mesh model, authored procedurally with Three.js; the surrounding garden is a composited image plate.
+Asset and model provenance for the 2026-09-26 preview, not a current task list. For the verified implementation and next goal, see [`../../CURRENT_STATE.md`](../../CURRENT_STATE.md). This is a genuine mesh model, authored procedurally with Three.js; the surrounding garden is a composited image plate.
 
 - `waterwheel.glb`: glTF 2.0, ~1.57 MB, 11,824 triangles, four PBR materials with embedded procedural oak grain. Imports into Blender and other glTF tools.
 - `Rotor`: wheel cheeks, spokes, open water scoops, hub and iron fittings. Rotate this node around local Z. Runtime rotates clockwise at 2.2 rpm.

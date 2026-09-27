@@ -1,5 +1,13 @@
 # QA 记录
 
+> Dated verification evidence for specific commits, not a current feature list. Begin with [CURRENT_STATE.md](CURRENT_STATE.md); older rows can contain now-replaced counts, layouts, or unresolved items. A successful Next.js build alone does not verify browser GLSL or device performance.
+
+## 2026-09-27 · Agent 文档整理
+
+- 基于代码提交 `9ca925f` 核对文档事实；只修改 Markdown，不改运行时代码或素材。
+- `npm ci`、`npm run lint`、`npm run build`、`git diff --check` 通过；`out/` 静态导出完成。
+- 接管模拟：只读 `AGENTS.md` → `CURRENT_STATE.md` 即能区分图片底板、运行时程序水车、GLB 导出资产和下一任务，并定位花园前三个源码入口；上游引擎说明仅按需读取。浏览器视觉/实体设备未因本次文档修改重复测试。
+
 ## 2026-09-26 · 左半弧 / 右场预览候选
 
 | 检查 | 状态 | 证据/范围 |
