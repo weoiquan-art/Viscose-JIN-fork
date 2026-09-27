@@ -1,5 +1,7 @@
 # Breakdown
 
+> Historical upstream Viscose design rationale, retained for deep ring/shader work. The screenshots and the unfinished-feature claims below are from the original demo; see [CURRENT_STATE.md](CURRENT_STATE.md) for the JIN Studio implementation. This is not a task list.
+
 Where this came from and how it got built.
 
 ## The idea
@@ -171,5 +173,4 @@ The idea works but it isn't finished.
 - The images are placeholders and they aren't mine. See
   [About the artwork](README.md#about-the-artwork).
 
-How the code is arranged is in [AGENTS.md](AGENTS.md). Setup and tuning are in
-[README.md](README.md).
+The original engine notes are archived in [docs/upstream-viscose-internals.md](docs/upstream-viscose-internals.md). Current setup is in [README.md](README.md).
