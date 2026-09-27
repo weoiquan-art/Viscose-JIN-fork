@@ -16,6 +16,7 @@ import { createMeta } from "./ring/meta";
 import { createSplitText } from "./ring/splitText";
 import { createTag, TAG_W, TAG_H } from "./ring/tag";
 import { defaultParams } from "./ring/params";
+import { ringViewport } from "./ring/viewport";
 import { IMAGE_FILES, PROJECTS } from "./ring/catalog";
 import { backgroundForProject } from "./ring/background";
 import {
@@ -91,7 +92,8 @@ export default function Carousel() {
       el.style.setProperty("--bg-video-opacity", params.bgVideoOpacity);
       el.style.setProperty("--zone-dead", `${params.zoneDead * 100}vh`);
       el.style.setProperty("--zone-hint-opacity", params.zoneHint);
-      el.style.setProperty("--nav-width", `${params.navWidth * 100}%`);
+      const viewport = ringViewport(window.innerWidth, window.innerHeight, params);
+      el.style.setProperty("--nav-width", `${viewport.navWidth * 100}%`);
       el.style.setProperty("--stage-padding", `${params.stagePadding}px`);
       el.style.setProperty("--stage-time", `${params.stageTime}s`);
       el.classList.toggle("jin-mobile", window.innerWidth < params.mobileAt);
@@ -340,7 +342,12 @@ export default function Carousel() {
       viewW = container.clientWidth;
       viewH = container.clientHeight;
       refit();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, ringViewport(viewW, viewH, params).dpr));
       renderer.setSize(viewW, viewH);
+      const viewport = ringViewport(viewW, viewH, params);
+      // Clipping in CSS alone still shades the whole screen on the GPU.
+      renderer.setScissor(0, 0, Math.ceil(viewW * viewport.navWidth), viewH);
+      renderer.setScissorTest(viewport.mobile);
       camera.left = -viewW / 2;
       camera.right = viewW / 2;
       camera.top = viewH / 2;
@@ -480,7 +487,7 @@ export default function Carousel() {
       }
       pick(
         planeForProject(index),
-        instant || viewW < params.mobileAt || reducedMotion,
+        instant || reducedMotion,
       );
     };
     navigateRef.current = selectProject;
@@ -844,10 +851,11 @@ export default function Carousel() {
       // is why the window fit rides in here rather than on a dozen params.
       const shift = clamp01(state.shift);
       const g = (1 + (endScale - 1) * shift) * fit;
-      const R = params.ringRadius * radiusK * g;
+      const viewport = ringViewport(viewW, viewH, params);
+      const R = viewport.radius ?? params.ringRadius * radiusK * g;
       const cx = params.centreFront
         ? -R * shift
-        : ((params.navFront - 0.5) * viewW - R + posX * viewW * 0.5) * shift;
+        : ((viewport.navFront - 0.5) * viewW - R + posX * viewW * 0.5) * shift;
       const cy = params.posY * viewH * 0.5 * shift;
 
       // Screen-space centre, for pointer maths. World Y is up, page Y is down.
@@ -865,14 +873,16 @@ export default function Carousel() {
         params.planeSize * planeK * g,
         2 *
           viewW *
-          Math.max(0.02, params.navWidth - params.navFront) *
+          Math.max(0.02, viewport.navWidth - viewport.navFront) *
           params.navCardFit,
       );
       const H = W / 1.5;
       uniforms.uSize.value.set(W, H);
       // Tracks the plane, not the window: a card 25% bigger with the same
       // corner is a differently shaped card, not a bigger one.
-      uniforms.uRadius.value = params.radius * planeK * g;
+      uniforms.uRadius.value = viewport.mobile
+        ? Math.min(W * 0.1, params.radius * planeK * g)
+        : params.radius * planeK * g;
 
       // Radial: the long edge points outward, so a plane's reach toward its
       // neighbour is its short axis and the facing edges are the long ones.
@@ -1193,7 +1203,7 @@ export default function Carousel() {
       uniforms.uTextured.value = params.textured && firstIn ? 1 : 0;
       uniforms.uBlend.value = Math.max(0.5, params.blend * planeK * g);
 
-      const on = params.glass;
+      const on = params.glass && !viewport.mobile;
       uniforms.uBandTop.value = on ? params.bandTop * viewH : 0;
       uniforms.uBandBottom.value = on ? params.bandBottom * viewH : 0;
       uniforms.uGlass.value.set(
@@ -1441,8 +1451,8 @@ export default function Carousel() {
     renderer.setAnimationLoop(() => {
       const now = performance.now();
       // Reduced motion freezes the shader's clock and repaints only as needed.
-      if ((reducedMotion || viewW < params.mobileAt) && now - lastRender < 80)
-        return;
+      const frameInterval = reducedMotion ? 80 : viewW < params.mobileAt ? 1000 / params.mobileFps : 0;
+      if (now - lastRender < frameInterval) return;
       lastRender = now;
       // Clamped, so a backgrounded tab does not resume with one huge step.
       const dt = Math.min(0.05, (now - prevT) / 1000);
@@ -1564,9 +1574,9 @@ export default function Carousel() {
         historyModeRef.current = "push";
       }
 
-      // The mobile navigation is DOM-only; keep selection state ticking, but
-      // do not spend GPU time painting a canvas the layout has hidden.
-      if (viewW >= params.mobileAt) renderer.render(scene, camera);
+      // Mobile keeps the same half-arc; resize caps its DPR and this loop
+      // caps its frame rate. Only a successful render may hide the fallback.
+      renderer.render(scene, camera);
       if (!shaderFailed && !disposed && !displayed) {
         displayed = true;
         setGlReady(true);
@@ -1700,6 +1710,14 @@ export default function Carousel() {
               ))}
             </select>
           </label>
+          <nav className="mobile-ring-controls" aria-label="轮盘作品导航">
+            <div>
+              <button type="button" aria-label="上一项作品" onClick={() => navigateRef.current?.((Math.max(0, active) - 1 + PROJECTS.length) % PROJECTS.length)}>↑</button>
+              <button type="button" aria-label="下一项作品" onClick={() => navigateRef.current?.((Math.max(0, active) + 1) % PROJECTS.length)}>↓</button>
+            </div>
+            <span>上下拖动</span>
+            <span>{String(Math.max(0, active) + 1).padStart(2, "0")} / {String(PROJECTS.length).padStart(2, "0")}</span>
+          </nav>
           <ProjectStage
             project={PROJECTS[active]}
             index={active}

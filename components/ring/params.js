@@ -79,6 +79,9 @@ export function defaultParams() {
     navFront: 0.17, // the settled card's centre, measured from the left edge
     navCardFit: 0.9, // leave a little air between its edge and the divider
     mobileAt: 768,
+    mobileNavWidth: 0.32, mobileNavFront: 0.16,
+    mobileRadiusWidth: 0.5, mobileRadiusHeight: 0.29,
+    mobileDpr: 1.25, mobileFps: 30,
     stagePadding: 42, // px within the right column
     stageTime: 0.65, // seconds to crossfade settled content
     navMetaTop: 14, // vh, above the arc
