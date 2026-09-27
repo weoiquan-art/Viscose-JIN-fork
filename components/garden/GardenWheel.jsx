@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { createWaterwheel, disposeObject } from "./waterwheel";
 import {gardenLayout} from "./layout";
+import {createGardenEnvironment} from "./environment";
 
 export default function GardenWheel({params, night, paused, leaving, onReady, onUnavailable, layoutRef}) {
   const host = useRef(null);
@@ -31,21 +32,22 @@ export default function GardenWheel({params, night, paused, leaving, onReady, on
     const camera = new THREE.OrthographicCamera(-8, 8, 5, -5, 0.1, 60);
     camera.position.z = 12;
     const rig = new THREE.Group(); scene.add(rig);
+    const world = new THREE.Group(); world.rotation.x = p.groundPitch; rig.add(world);
+    const environment = createGardenEnvironment(p); world.add(environment.root);
     const {root, rotor} = createWaterwheel(p);
     root.rotation.set(p.tilt, p.yaw, 0);
-    rig.add(root);
+    world.add(root); root.add(environment.footings);
     const hemi = new THREE.HemisphereLight("#dceaff", "#726147", 2.2); rig.add(hemi);
     const key = new THREE.DirectionalLight("#fff0d6", p.dayKey);
     key.position.set(-4, 6, 6); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = key.shadow.camera.bottom = -4;
-    key.shadow.camera.right = key.shadow.camera.top = 4;
+    key.shadow.camera.left = key.shadow.camera.bottom = -9;
+    key.shadow.camera.right = key.shadow.camera.top = 9;
     key.shadow.normalBias = 0.045;
     key.shadow.bias = -0.001;
     rig.add(key, key.target);
     const lamp = new THREE.PointLight("#ffb658", 0, 12, 2); lamp.position.set(3.5, 2.2, 2); rig.add(lamp);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(7, 4), new THREE.ShadowMaterial({opacity: 0.28, depthWrite: false}));
-    ground.rotation.x = -Math.PI / 2; ground.position.y = -p.radius - 0.13; ground.receiveShadow = true; root.add(ground);
+
 
     // Gravity-driven droplets stay in world space while the rotor turns.
     const drops = new Float32Array(p.particles * 3);
@@ -101,6 +103,8 @@ export default function GardenWheel({params, night, paused, leaving, onReady, on
       if (stopped && !first && !dirty && Math.abs(themeMix - oldMix) < 0.00001 && target === Math.round(themeMix)) return;
       dirty = false;
       root.rotation.set(p.tilt, p.yaw, 0);
+      world.rotation.x = p.groundPitch;
+      environment.update(time, themeMix);
       hemi.intensity = THREE.MathUtils.lerp(2.2, 0.8, themeMix);
       hemi.groundColor.set(themeMix > 0.5 ? "#202d3e" : "#726147");
       key.intensity = THREE.MathUtils.lerp(p.dayKey, p.nightKey, themeMix); key.color.copy(day).lerp(moon, themeMix);
@@ -119,6 +123,7 @@ export default function GardenWheel({params, night, paused, leaving, onReady, on
       renderer.render(scene, camera);
       el.dataset.angle = rotor.rotation.z.toFixed(4);
       el.dataset.themeMix = themeMix.toFixed(3);
+      el.dataset.waterTime = time.toFixed(3);
       if (first && !failed) {first = false; onReady();}
     };
     frame = requestAnimationFrame(animate);
@@ -130,10 +135,12 @@ export default function GardenWheel({params, night, paused, leaving, onReady, on
         const posterCamera = new THREE.OrthographicCamera(-2.0, 2.8, 2.65, -2.15, 0.1, 60);
         posterCamera.position.z = 12;
         const position = rig.position.clone(); rig.position.set(0, 0, 0);
+        environment.root.visible = false; environment.footings.visible = false; const pitch = world.rotation.x; world.rotation.x = 0;
         hemi.intensity = 2.2; key.intensity = p.dayKey; key.color.copy(day); lamp.intensity = 0; renderer.toneMappingExposure = p.dayExposure;
         rotor.rotation.z = 0;
         renderer.render(scene, posterCamera);
         const data = renderer.domElement.toDataURL("image/png");
+        environment.root.visible = true; environment.footings.visible = true; world.rotation.x = pitch;
         rig.position.copy(position); renderer.setPixelRatio(Math.min(devicePixelRatio,p.dpr)); resize();
         return data;
       };

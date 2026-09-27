@@ -28,6 +28,7 @@ export function gardenParams() {
     dayKey: 3.5, nightKey: 1.2, nightLamp: 38,
     radius: 1.65, rimWidth: 0.23, depth: 0.64,
     spokes: 8, buckets: 12, particles: 100,
+    groundPitch: 0.48, bankGrass: 2600,
   };
 }
 
