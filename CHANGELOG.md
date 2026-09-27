@@ -2,6 +2,12 @@
 
 > Historical sequence only. For the inspected branch's present implementation and one active next task, read [CURRENT_STATE.md](CURRENT_STATE.md).
 
+## 2026-09-27 · Garden 首段溪岸建模（预览）
+
+- `environment.js` 新增溪床、两岸坡面、岸石、实例化草叶、基础墩与动态水面；与现有水车共用倾斜世界、昼夜灯光与暂停时钟。水面为程序波纹，不是流体模拟。
+- 保留远景图片与原静态降级；没有更换作品、导航或导出的水车 GLB。开发模式的水车导出仍只输出水车。
+- 代码 `c90e15c` 已通过 Cloudflare Pages 预览构建；浏览器 WebGL 被禁用，已验证静态降级导航，新增 3D 视觉、移动端和真机性能尚待验证。
+
 ## 2026-09-27 · Agent 接管入口整理
 
 - `AGENTS.md` 收敛为任务路由；新增 `CURRENT_STATE.md`，按实际代码区分花园图片底板、运行时 Three.js 水车与下一阶段完整 3D 环境目标。

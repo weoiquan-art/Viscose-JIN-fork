@@ -1,6 +1,6 @@
 # JIN Studio · Garden waterwheel
 
-Asset and model provenance for the 2026-09-26 preview, not a current task list. For the verified implementation and next goal, see [`../../CURRENT_STATE.md`](../../CURRENT_STATE.md). This is a genuine mesh model, authored procedurally with Three.js; the surrounding garden is a composited image plate.
+Asset and model provenance for the 2026-09-26 preview, not a current task list. For the verified implementation and next goal, see [`../../CURRENT_STATE.md`](../../CURRENT_STATE.md). This is a genuine mesh model, authored procedurally with Three.js; the original surrounding garden is a composited image plate. The first runtime creek/bank geometry was added on 2026-09-27; see current state for its review status.
 
 - `waterwheel.glb`: glTF 2.0, ~1.57 MB, 11,824 triangles, four PBR materials with embedded procedural oak grain. Imports into Blender and other glTF tools.
 - `Rotor`: wheel cheeks, spokes, open water scoops, hub and iron fittings. Rotate this node around local Z. Runtime rotates clockwise at 2.2 rpm.
@@ -12,6 +12,7 @@ The GLB contains geometry, materials and a `Waterwheel_cycle` rotation clip (one
 
 ## Source and reproducibility
 
+- Local creek/banks, stones, grass, foundations and water: `components/garden/environment.js` (runtime only, no exported GLB). Its shared clock follows wheel pause/reduced-motion. Outer plate surroundings remain unchanged.
 - Geometry and seeded oak texture: `components/garden/waterwheel.js`.
 - Camera composition and all garden tuning: `gardenParams()` in `components/ring/params.js`; crop/hotspot mapping: `components/garden/layout.js`.
 - In development only, visit `/?garden-debug` for the numeric controls. Dimensions that change topology require rebuilding/reloading the model after editing defaults; lighting, speed, camera and composition parameters update live.

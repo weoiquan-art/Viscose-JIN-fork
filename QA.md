@@ -2,6 +2,13 @@
 
 > Dated verification evidence for specific commits, not a current feature list. Begin with [CURRENT_STATE.md](CURRENT_STATE.md); older rows can contain now-replaced counts, layouts, or unresolved items. A successful Next.js build alone does not verify browser GLSL or device performance.
 
+## 2026-09-27 · 溪岸第一阶段 · `c90e15c`
+
+- `npm run lint`、`npm run build`、`git diff --check` 通过。环境几何检查：7 个网格批次、2,920 个实例，更新波浪后位置均为有限数值。
+- 该提交 Cloudflare Pages 部署成功：[预览](https://6a130d64.viscose-jin-fork.pages.dev/)。独立 Workers 失败原因为不存在对应 Worker。
+- 云浏览器报告 WebGL context 创建失败，`GL_RENDERER = Disabled`；观察到静态水车降级。路灯切换至夜晚、水车点击进入 `#nuonuo` 作品目录、返回花园并保留夜景和入口焦点，均通过。
+- **未验证：**新增环境的实际 WebGL/GLSL 渲染、溪岸底板接缝、移动端视觉、动态暂停与 reduced-motion 的运行表现、真机帧率。不得以静态降级截图充当新增 3D 成果截图。
+
 ## 2026-09-27 · Agent 文档整理
 
 - 基于代码提交 `9ca925f` 核对文档事实；只修改 Markdown，不改运行时代码或素材。
